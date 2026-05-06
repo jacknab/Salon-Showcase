@@ -10,8 +10,6 @@ The catalog lives at `certxa.com/launchsite/` alongside the rest of your site.
 1. [Server Requirements](#1-server-requirements)
 2. [Get the Files onto Your VPS](#2-get-the-files-onto-your-vps)
 3. [Web Server Configuration](#3-web-server-configuration)
-   - [Apache](#apache-recommended)
-   - [Nginx](#nginx-alternative)
 4. [PHP Configuration](#4-php-configuration)
 5. [File Permissions](#5-file-permissions)
 6. [Admin Password](#6-admin-password)
@@ -29,8 +27,9 @@ The catalog lives at `certxa.com/launchsite/` alongside the rest of your site.
 | Component | Minimum | Notes |
 |---|---|---|
 | OS | Ubuntu 22.04 LTS | Other Debian-based distros work too |
-| Web server | Apache 2.4 **or** Nginx 1.18 | Apache is easier for this setup |
+| Web server | **Nginx 1.18+** | |
 | PHP | **8.2+** | 8.3 is fine |
+| PHP-FPM | **8.2** | Nginx uses FPM to run PHP |
 | PHP extensions | `gd`, `mbstring`, `json`, `session` | GD is required for thumbnail upload/resize |
 | Node.js | **20 LTS** or 22 LTS | Required only for React template installs |
 | pnpm | **8+** | Package manager for React templates |
@@ -75,156 +74,101 @@ Connect with your SFTP client and upload the contents of `launchsite-php/` into 
 ## 3. Web Server Configuration
 
 > `router.php` is **only** used by the PHP built-in dev server (Replit).
-> On Apache/Nginx you do **not** use `router.php` — the web server handles routing directly.
+> On Nginx you do **not** use `router.php` — Nginx handles routing directly.
 
-### Apache (recommended)
-
-#### 1. Enable required modules
+### Install Nginx and PHP-FPM
 
 ```bash
-sudo a2enmod rewrite
-sudo systemctl restart apache2
+sudo apt update
+sudo apt install -y nginx php8.2-fpm php8.2-gd php8.2-mbstring php8.2-json
 ```
 
-#### 2. Create a virtual host config
-
-```apache
-# /etc/apache2/sites-available/certxa.conf
-
-<VirtualHost *:80>
-    ServerName certxa.com
-    ServerAlias www.certxa.com
-    DocumentRoot /var/www/certxa.com
-
-    # ── Launchit catalog ──────────────────────────────────────
-    <Directory /var/www/certxa.com/launchsite>
-        Options -Indexes +FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-
-    # React SPA sub-directories: serve index.html for all non-file routes
-    <Directory /var/www/certxa.com/launchsite/templates>
-        Options -Indexes
-        AllowOverride All
-        Require all granted
-        FallbackResource /launchsite/templates/%1/index.html
-    </Directory>
-
-    ErrorLog ${APACHE_LOG_DIR}/certxa_error.log
-    CustomLog ${APACHE_LOG_DIR}/certxa_access.log combined
-</VirtualHost>
-```
-
-#### 3. Create a `.htaccess` inside `launchsite/`
-
-Create `/var/www/certxa.com/launchsite/.htaccess`:
-
-```apache
-Options -Indexes
-
-# React SPA routing: for each templates/{id}/* request, fall back to that SPA's index.html
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /launchsite/
-
-    # Don't rewrite real files or directories
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-
-    # React template SPA fallback
-    RewriteRule ^templates/([^/]+)/(.*)$ /launchsite/templates/$1/index.html [L]
-</IfModule>
-
-# PHP file upload limits (overrides php.ini for this directory)
-php_value upload_max_filesize 60M
-php_value post_max_size 65M
-php_value max_execution_time 180
-php_value memory_limit 256M
-```
-
-#### 4. Enable the site and reload
+### Create the Nginx server block
 
 ```bash
-sudo a2ensite certxa.conf
-sudo apache2ctl configtest   # should say: Syntax OK
-sudo systemctl reload apache2
+sudo nano /etc/nginx/sites-available/certxa
 ```
 
-#### 5. HTTPS with Let's Encrypt
-
-```bash
-sudo apt install certbot python3-certbot-apache -y
-sudo certbot --apache -d certxa.com -d www.certxa.com
-```
-
-Certbot will auto-add HTTPS redirects and renew certificates automatically.
-
----
-
-### Nginx (alternative)
+Paste the following (adjust `server_name` and paths to match your setup):
 
 ```nginx
-# /etc/nginx/sites-available/certxa
-
 server {
     listen 80;
     server_name certxa.com www.certxa.com;
     root /var/www/certxa.com;
     index index.php index.html;
 
-    # ── Launchit catalog ──────────────────────────────────────
-    location /launchsite {
-        try_files $uri $uri/ @php;
-    }
+    # ── Launchit catalog ──────────────────────────────────────────────────────
 
-    # React SPA fallback — each template/{id}/ is its own SPA
-    location ~ ^/launchsite/templates/([^/]+)/(.*)$ {
+    # React SPA fallback — must come BEFORE the general /launchsite block
+    # Each templates/{id}/ directory is its own SPA; non-file routes serve index.html
+    location ~ ^/launchsite/templates/([^/]+)/(.+)$ {
         try_files $uri /launchsite/templates/$1/index.html;
     }
 
-    # PHP handler
-    location @php {
+    # Main catalog — PHP pages and static assets
+    location /launchsite {
+        try_files $uri $uri/ @launchit_php;
+    }
+
+    location @launchit_php {
         fastcgi_pass unix:/run/php/php8.2-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         include fastcgi_params;
     }
 
+    # PHP execution
     location ~ \.php$ {
         fastcgi_pass unix:/run/php/php8.2-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         include fastcgi_params;
     }
 
-    # Block direct access to data/ directory
+    # Block direct access to the template registry
     location /launchsite/data/ {
         deny all;
     }
 
+    # Disable directory listings
+    autoindex off;
+
+    # Max upload size (must match php.ini values below)
     client_max_body_size 65M;
+
+    error_log  /var/log/nginx/certxa_error.log;
+    access_log /var/log/nginx/certxa_access.log;
 }
 ```
 
+### Enable the site and test
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/certxa /etc/nginx/sites-enabled/
-sudo nginx -t
+sudo nginx -t          # must print: configuration file ... syntax is ok
 sudo systemctl reload nginx
-# HTTPS:
+```
+
+### HTTPS with Let's Encrypt
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d certxa.com -d www.certxa.com
 ```
+
+Certbot automatically adds HTTPS redirects and sets up auto-renewal.
 
 ---
 
 ## 4. PHP Configuration
 
-Check your active `php.ini` path:
+Edit the PHP-FPM php.ini:
 
 ```bash
-php --ini | grep "Loaded Configuration"
+sudo nano /etc/php/8.2/fpm/php.ini
 ```
 
-Edit it (usually `/etc/php/8.2/apache2/php.ini` for Apache, `/etc/php/8.2/fpm/php.ini` for Nginx+FPM):
+Find and update these values:
 
 ```ini
 ; Required for React template ZIP uploads
@@ -238,7 +182,7 @@ memory_limit        = 256M
 extension=gd
 ```
 
-Verify GD is enabled:
+Verify GD is active:
 
 ```bash
 php -m | grep gd
@@ -249,14 +193,11 @@ If GD is missing:
 
 ```bash
 sudo apt install php8.2-gd -y
-sudo systemctl restart apache2   # or php8.2-fpm for Nginx
 ```
 
-Restart PHP after any php.ini change:
+Restart PHP-FPM after any php.ini change:
 
 ```bash
-sudo systemctl restart apache2
-# or for Nginx+FPM:
 sudo systemctl restart php8.2-fpm
 ```
 
@@ -264,28 +205,23 @@ sudo systemctl restart php8.2-fpm
 
 ## 5. File Permissions
 
-The web server user (`www-data` on Ubuntu) must be able to **read** all files and **write** to specific directories used by the admin panel.
+The web server user (`www-data`) must be able to **read** all files and **write** to specific directories the admin panel uses.
 
 ```bash
 # Set ownership
 sudo chown -R www-data:www-data /var/www/certxa.com/launchsite/
 
-# Directories the admin panel writes to:
-sudo chmod 775 /var/www/certxa.com/launchsite/data/
-sudo chmod 775 /var/www/certxa.com/launchsite/assets/img/thumbs/
-sudo chmod 775 /var/www/certxa.com/launchsite/templates/
-
-# Everything else: readable, not writable by web server
+# Set standard permissions
 sudo find /var/www/certxa.com/launchsite/ -type f -exec chmod 644 {} \;
 sudo find /var/www/certxa.com/launchsite/ -type d -exec chmod 755 {} \;
 
-# Re-apply writable dirs after the above
+# Directories the admin panel writes to — must be writable
 sudo chmod 775 /var/www/certxa.com/launchsite/data/
 sudo chmod 775 /var/www/certxa.com/launchsite/assets/img/thumbs/
 sudo chmod 775 /var/www/certxa.com/launchsite/templates/
 ```
 
-> If you also deploy React template source files (`artifacts/template-*/`), put them **outside** the web root, e.g. `/var/www/certxa-artifacts/`, so they are not publicly accessible. The admin install script only needs write access to `templates/` and `data/`.
+> If you also deploy React template source files (`artifacts/template-*/`), keep them **outside** the web root — e.g. `/var/www/certxa-artifacts/` — so they are not publicly accessible. The admin install script only needs write access to `templates/` and `data/`.
 
 ---
 
@@ -293,21 +229,30 @@ sudo chmod 775 /var/www/certxa.com/launchsite/templates/
 
 The admin panel (`/launchsite/admin.php`) is protected by a password.
 
-### Set via environment variable (recommended)
+### Set via PHP-FPM pool config (recommended)
 
-For Apache, add to your virtual host config:
-
-```apache
-SetEnv ADMIN_PASSWORD your-strong-password-here
+```bash
+sudo nano /etc/php/8.2/fpm/pool.d/www.conf
 ```
 
-For Nginx+FPM, add to `/etc/php/8.2/fpm/pool.d/www.conf`:
+Add this line anywhere in the file (near the other `env[…]` lines if present):
 
 ```ini
 env[ADMIN_PASSWORD] = your-strong-password-here
 ```
 
-Then restart Apache/FPM.
+Restart FPM to apply:
+
+```bash
+sudo systemctl restart php8.2-fpm
+```
+
+### Generate a strong password
+
+```bash
+openssl rand -base64 24
+# example output: K8mXpQ2nLv7rJwYcFtAdEhBs
+```
 
 ### Fallback default
 
@@ -318,10 +263,10 @@ If no environment variable is set, the default password is `launchit-admin`.
 
 ## 7. Node.js + pnpm (React template uploads)
 
-This is required if you want to upload new React/Vite template ZIPs through the admin panel and have them built automatically on the server.
+Required if you want to upload new React/Vite template ZIPs through the admin panel and have them built automatically on the server.
 
 ```bash
-# Install Node.js 20 LTS via NodeSource
+# Install Node.js 20 LTS
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
@@ -336,45 +281,53 @@ sudo npm install -g pnpm
 pnpm -v    # 8.x or 9.x
 ```
 
-The admin install script runs `pnpm install` and `pnpm run build` inside a temp directory. Make sure the `www-data` user can run these commands.
+The admin install script runs `pnpm install` and `pnpm run build` as the `www-data` user. If `www-data` cannot find `node` or `pnpm` due to a restricted PATH, fix it in the FPM pool config:
 
-If `www-data` can't run `node`/`pnpm` due to PATH issues, add this to your Apache virtual host:
+```bash
+sudo nano /etc/php/8.2/fpm/pool.d/www.conf
+```
 
-```apache
-SetEnv PATH /usr/local/bin:/usr/bin:/bin
+Add:
+
+```ini
+env[PATH] = /usr/local/bin:/usr/bin:/bin
+```
+
+Then restart FPM:
+
+```bash
+sudo systemctl restart php8.2-fpm
 ```
 
 ---
 
 ## 8. Chromium / Puppeteer (Regen Thumb)
 
-The **Regen Thumb** button in the admin panel takes a headless browser screenshot of the live template and saves it as the catalog card image. This requires Chromium on the server.
+The **Regen Thumb** button takes a headless browser screenshot of the live template and saves it as the catalog card image. This requires Chromium on the server.
 
 ```bash
 # Install Chromium
 sudo apt install -y chromium-browser
 
-# Verify path
+# Confirm the path
 which chromium-browser
 # typically: /usr/bin/chromium-browser
 ```
 
-The screenshot script is at `scripts/src/screenshot.mjs` in your project. Update the Chromium path in the script if it differs from the Replit path:
-
-Open `scripts/src/screenshot.mjs` and find the `executablePath` line. Change it to match your server's Chromium path:
+Update the screenshot script to use the server's Chromium path. Open `scripts/src/screenshot.mjs` and find the `executablePath` line — change it to:
 
 ```js
 executablePath: '/usr/bin/chromium-browser',
 ```
 
-Then install script dependencies (run once from the project root):
+Install script dependencies once on the server:
 
 ```bash
-cd /var/www/certxa-artifacts/scripts   # wherever your scripts/ folder lives
+cd /path/to/scripts/   # wherever your scripts/ folder lives on the VPS
 pnpm install
 ```
 
-> **Note:** The **Upload Image** button does not need Chromium — it uses PHP GD to process your uploaded image directly. Chromium is only needed for the automatic screenshot feature.
+> **Note:** The **Upload Image** button does not need Chromium — it uses PHP GD to resize your image directly. Chromium is only needed for the automatic screenshot feature.
 
 ---
 
@@ -393,24 +346,24 @@ After uploading files and configuring the server, run through this list:
 [ ] Click "Edit" on any template — modal opens with current values
 [ ] Edit a field, Save — flash message confirms, change appears in table
 [ ] Click "Upload Image" — modal opens, upload a test image, thumbnail updates
-[ ] Check file permissions: try uploading a React ZIP through the admin panel
+[ ] Try uploading a React ZIP through the admin panel
 ```
 
 ---
 
 ## 10. Ongoing Admin Workflow
 
-Once live, you manage everything through the admin panel at `/launchsite/admin.php`.
+Once live, manage everything through the admin panel at `/launchsite/admin.php`.
 
 ### Adding a new React template
 
-1. Build your React/Vite project locally and zip the source folder
+1. Zip your React/Vite project source folder
 2. Log into the admin panel
 3. Click **Upload New React/Vite Template**, choose category, upload ZIP
 4. The server installs dependencies, builds the site, registers it, and generates a thumbnail — takes 30–90 seconds
 5. The new template card appears in the catalog immediately
 
-### Updating a template's catalog copy
+### Updating a template's catalog entry
 
 - **Edit** — change name, description, colors, badge, hero text directly in the admin
 - **Upload Image** — replace the catalog card thumbnail with any JPG/PNG/WebP
@@ -418,16 +371,16 @@ Once live, you manage everything through the admin panel at `/launchsite/admin.p
 - **Duplicate** — create a second catalog entry (React: also copies built files)
 - **Replace** — upload a new ZIP to rebuild the template completely
 
-### Deploying file updates from Replit to VPS
+### Pushing code updates from Replit to VPS
 
-After making code changes in Replit, push them to your VPS with rsync:
+After making changes in Replit, sync to the server with rsync:
 
 ```bash
 rsync -avz --delete \
   /path/to/workspace/launchsite-php/ \
   user@your-vps-ip:/var/www/certxa.com/launchsite/
 
-# Fix permissions after sync
+# Fix ownership after sync
 ssh user@your-vps-ip "sudo chown -R www-data:www-data /var/www/certxa.com/launchsite/"
 ```
 
@@ -435,47 +388,48 @@ ssh user@your-vps-ip "sudo chown -R www-data:www-data /var/www/certxa.com/launch
 
 ## 11. Security Hardening
 
-### Block direct access to sensitive directories
+### Block access to sensitive paths in Nginx
 
-Add to `.htaccess` (Apache) or Nginx config:
+These are already in the server block above, but confirm they are present:
 
-```apache
-# Block data/ directory from web access (contains templates.php registry)
-<Directory /var/www/certxa.com/launchsite/data>
-    Require all denied
-</Directory>
+```nginx
+# Block the template registry from public access
+location /launchsite/data/ {
+    deny all;
+}
 
-# Block direct access to PHP admin scripts from non-admin IPs (optional)
-<FilesMatch "^admin.*\.php$">
-    Require ip 203.0.113.0/24   # replace with your IP or IP range
-    # Or remove this block and rely only on the password
-</FilesMatch>
+# Optionally restrict admin pages to your IP only
+location ~ ^/launchsite/admin.*\.php$ {
+    allow 203.0.113.0;   # replace with your IP
+    deny all;
+    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include fastcgi_params;
+}
 ```
 
-### Strong admin password
-
-Set a long random password:
-
-```bash
-openssl rand -base64 24
-# e.g. K8mXpQ2nLv7rJwYcFtAdEhBs
-```
-
-Set it as the `ADMIN_PASSWORD` environment variable (see Section 6).
-
-### Keep PHP and Node.js updated
+### Keep software updated
 
 ```bash
 sudo apt update && sudo apt upgrade -y
+sudo systemctl restart nginx php8.2-fpm
 ```
 
 ### File upload directory
 
-Consider storing uploaded ZIP files temporarily in `/tmp` (already the default) so they are never web-accessible.
+Uploaded ZIP files are written to `/tmp` by default — they are never web-accessible there.
 
-### Restrict PHP execution to PHP files only
+### Prevent PHP execution inside the templates/ directory
 
-In your Apache config, ensure `.php` files can only execute inside the web root — not inside `templates/` (which are React static files). This is handled by limiting `<FilesMatch "\.php$">` to the `launchsite/` directory only, not subdirectories that contain pure HTML/JS.
+React template directories contain only static HTML/JS/CSS. Block PHP execution inside them:
+
+```nginx
+location ~ ^/launchsite/templates/.*\.php$ {
+    deny all;
+}
+```
+
+Add this block to your server config above the general `\.php$` handler.
 
 ---
 
@@ -489,7 +443,7 @@ The `data/templates.php` file has a syntax error (can happen after a failed inst
 php -l /var/www/certxa.com/launchsite/data/templates.php
 ```
 
-If it fails, open the file in a text editor and look for the broken entry near the end. Remove the incomplete block. Each entry should look like:
+If it fails, open the file and look for the broken entry near the end. Remove the incomplete block. Each entry must look like:
 
 ```php
 'template-id' => [
@@ -500,49 +454,50 @@ If it fails, open the file in a text editor and look for the broken entry near t
 ],
 ```
 
-### React template shows 404 or blank page
+### React template shows 404 or blank white page
 
-The SPA routing rewrite rule is not working. Verify:
-- Apache: `mod_rewrite` is enabled (`sudo a2enmod rewrite`)
-- Apache: `.htaccess` is being read — `AllowOverride All` is set in your VirtualHost `<Directory>` block
-- The built template files exist: `ls /var/www/certxa.com/launchsite/templates/{template-id}/`
+The SPA routing location block is not matching. Check:
+
+- The `location ~ ^/launchsite/templates/([^/]+)/(.+)$` block is defined **before** the general `/launchsite` block in your Nginx config
+- Built files actually exist: `ls /var/www/certxa.com/launchsite/templates/{template-id}/`
+- Test Nginx config: `sudo nginx -t` and reload: `sudo systemctl reload nginx`
 
 ### Thumbnail not generating (Regen Thumb)
 
 - Verify Chromium is installed: `which chromium-browser`
-- Check the `executablePath` in `scripts/src/screenshot.mjs` matches
-- Check that `pnpm install` has been run in the `scripts/` directory
-- The `www-data` user must be able to execute `node` — check PATH
+- Check the `executablePath` in `scripts/src/screenshot.mjs` matches that path
+- Confirm `pnpm install` has been run in the `scripts/` directory
+- The `www-data` user must be able to run `node` — check `env[PATH]` in `www.conf`
 
 ### ZIP upload fails or times out
 
-- Increase PHP limits (Section 4)
-- Check `post_max_size` > `upload_max_filesize`
+- Increase limits in `/etc/php/8.2/fpm/php.ini` (Section 4)
+- Confirm `post_max_size` is larger than `upload_max_filesize`
+- Confirm `client_max_body_size 65M` is set in your Nginx server block
 - Verify disk space: `df -h`
-- Check `/tmp` is writable by `www-data`
+- Check `/tmp` is writable: `ls -la /tmp`
 
 ### pnpm install fails during template upload
 
-- Confirm `pnpm` is in the PATH available to `www-data`
-- Check internet access from the server: `curl https://registry.npmjs.org`
+- Confirm `env[PATH]` is set in `www.conf` (Section 7)
+- Check internet access: `curl https://registry.npmjs.org`
 - Check disk space: `df -h`
 
 ### Admin panel redirects to login after every action
 
-PHP sessions are not persisting. Check:
+PHP sessions are not persisting. Check the session directory:
 
 ```bash
 php -i | grep session.save_path
-# ensure the path exists and is writable
 ls -la /var/lib/php/sessions/
-sudo chmod 777 /var/lib/php/sessions/   # temporary fix to confirm
 ```
 
-If that fixes it, set proper ownership instead:
+Fix ownership:
 
 ```bash
 sudo chown www-data:www-data /var/lib/php/sessions/
 sudo chmod 700 /var/lib/php/sessions/
+sudo systemctl restart php8.2-fpm
 ```
 
 ---
@@ -565,3 +520,10 @@ sudo chmod 700 /var/lib/php/sessions/
 | `templates/{id}/` | Built React SPA files |
 | `assets/css/style.css` | Catalog styles |
 | `config.php` | `BASE_PATH` constant |
+
+| Key config file | Purpose |
+|---|---|
+| `/etc/nginx/sites-available/certxa` | Nginx server block |
+| `/etc/php/8.2/fpm/php.ini` | PHP settings (upload limits, GD) |
+| `/etc/php/8.2/fpm/pool.d/www.conf` | FPM pool — env vars (password, PATH) |
+| `/var/lib/php/sessions/` | PHP session storage |
