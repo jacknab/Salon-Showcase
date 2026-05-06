@@ -147,10 +147,13 @@ function adjust_hex(string $hex, int $amount): string {
 }
 
 function detect_metadata(string $dir, string $zip_filename, string $category): array {
-    // ID from zip filename
+    // ID from zip filename — strip "bolt" segments (e.g. project-bolt-xxx → project-xxx)
     $raw_id = preg_replace('/\.zip$/i', '', $zip_filename);
     $id = preg_replace('/[^a-z0-9\-]/', '', strtolower(str_replace(['_',' ','.'], '-', $raw_id)));
-    $id = trim($id, '-') ?: ('template-' . substr(md5(microtime()), 0, 6));
+    $id = preg_replace('/-bolt-/', '-', $id);
+    $id = preg_replace('/^bolt-/', '', $id);
+    $id = preg_replace('/-bolt$/', '', $id);
+    $id = trim(preg_replace('/-+/', '-', $id), '-') ?: ('template-' . substr(md5(microtime()), 0, 6));
 
     // Name from package.json
     $name = '';
@@ -163,6 +166,18 @@ function detect_metadata(string $dir, string $zip_filename, string $category): a
         $name = ucwords(str_replace(['-','_'], ' ', $clean));
     }
     if (strlen($name) < 2) $name = ucwords(str_replace(['-','_'], ' ', $id));
+
+    // Check index.html <title> — real templates often have the actual site name here
+    $index_html_path = $dir . '/index.html';
+    if (file_exists($index_html_path)) {
+        $html_content = file_get_contents($index_html_path);
+        if (preg_match('/<title>([^<]{3,80})<\/title>/i', $html_content, $m)) {
+            $title_raw = trim($m[1]);
+            if (!preg_match('/vite|react|typescript|starter|template|webpack|create.?app/i', $title_raw)) {
+                $name = $title_raw;
+            }
+        }
+    }
 
     // Business name & hero text from main component
     $app_src = read_main_component($dir);

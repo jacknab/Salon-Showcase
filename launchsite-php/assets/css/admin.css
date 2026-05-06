@@ -182,6 +182,8 @@ body.admin-body {
 .tbl-link:hover { color: white; text-decoration: underline; }
 .tbl-id { font-family: monospace; color: rgba(255,255,255,0.5); font-size: 0.8rem; }
 .tbl-cat { color: rgba(255,255,255,0.6); }
+.tbl-hours { white-space: nowrap; }
+.hours-compact { font-size: 0.72rem; color: rgba(255,255,255,0.42); line-height: 1.65; }
 
 /* ── Upload / form ── */
 .upload-drop {

@@ -165,6 +165,17 @@ if (file_exists($pkg_file)) {
     $detected = ucwords(str_replace(['-','_'], ' ', $clean));
     if (strlen($detected) > 2) $name = $detected;
 }
+// Check index.html <title> — overrides generic package.json names
+$index_html_path = $source_dir . '/index.html';
+if (file_exists($index_html_path)) {
+    $html_content = file_get_contents($index_html_path);
+    if (preg_match('/<title>([^<]{3,80})<\/title>/i', $html_content, $m)) {
+        $title_raw = trim($m[1]);
+        if (!preg_match('/vite|react|typescript|starter|template|webpack|create.?app/i', $title_raw)) {
+            $name = $title_raw;
+        }
+    }
+}
 
 // Also scan all TSX/JSX/CSS files for better coverage
 $all_src = $src;

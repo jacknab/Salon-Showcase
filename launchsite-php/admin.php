@@ -129,6 +129,7 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                         <th>Category</th>
                         <th>Type</th>
                         <th>Thumbnail</th>
+                        <th>Hours</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -149,6 +150,15 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                         <td>
                             <span class="thumb-dot thumb-dot--<?php echo $thumb_ok ? 'ok' : 'missing'; ?>"></span>
                             <?php echo $thumb_ok ? 'OK' : 'Missing'; ?>
+                        </td>
+                        <td class="tbl-hours">
+                            <?php
+                            $hrs = $t['hours'] ?? null;
+                            if ($hrs):
+                                echo '<span class="hours-compact">' . htmlspecialchars($hrs) . '</span>';
+                            else: ?>
+                            <span class="hours-compact">Mon–Fri 9am–6pm<br>Sat 10am–4pm<br>Sun Closed</span>
+                            <?php endif; ?>
                         </td>
                         <td class="tbl-actions">
                             <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($id); ?>"
