@@ -22,30 +22,30 @@ $is_preview   = ($current_page === 'preview.php');
 <header class="site-header">
     <div class="container">
         <nav class="navbar">
-            <a href="https://certxa.com" class="logo">
+            <a href="https://certxa.com" class="logo" target="_blank">
                 <span class="logo-text">Certxa<span class="logo-dot">.</span></span>
             </a>
             <div class="nav-links">
-                <a href="https://certxa.com/salonos" class="nav-link">SalonOS</a>
-                <a href="https://certxa.com/launchit" class="nav-link nav-link--active">Launchit</a>
-                <a href="https://certxa.com/#how-it-works" class="nav-link">How It Works</a>
-                <a href="https://certxa.com/pricing" class="nav-link">Pricing</a>
+                <a href="https://certxa.com/salonos" class="nav-link" target="_blank">SalonOS</a>
+                <a href="https://certxa.com/launchit" class="nav-link nav-link--active" target="_blank">Launchit</a>
+                <a href="https://certxa.com/#how-it-works" class="nav-link" target="_blank">How It Works</a>
+                <a href="https://certxa.com/pricing" class="nav-link" target="_blank">Pricing</a>
             </div>
             <div class="nav-actions">
-                <a href="https://certxa.com/login" class="btn btn--ghost">Log In</a>
-                <a href="https://certxa.com/signup" class="btn btn--primary">Get Started</a>
+                <a href="https://certxa.com/login" class="btn btn--ghost" target="_blank">Log In</a>
+                <a href="https://certxa.com/signup" class="btn btn--primary" target="_blank">Get Started</a>
             </div>
             <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
                 <span></span><span></span><span></span>
             </button>
         </nav>
         <div class="mobile-menu" id="mobileMenu">
-            <a href="https://certxa.com/salonos" class="mobile-nav-link">SalonOS</a>
-            <a href="https://certxa.com/launchit" class="mobile-nav-link">Launchit</a>
-            <a href="https://certxa.com/#how-it-works" class="mobile-nav-link">How It Works</a>
-            <a href="https://certxa.com/pricing" class="mobile-nav-link">Pricing</a>
-            <a href="https://certxa.com/login" class="mobile-nav-link">Log In</a>
-            <a href="https://certxa.com/signup" class="btn btn--primary" style="margin-top:1rem;display:inline-block;">Get Started</a>
+            <a href="https://certxa.com/salonos" class="mobile-nav-link" target="_blank">SalonOS</a>
+            <a href="https://certxa.com/launchit" class="mobile-nav-link" target="_blank">Launchit</a>
+            <a href="https://certxa.com/#how-it-works" class="mobile-nav-link" target="_blank">How It Works</a>
+            <a href="https://certxa.com/pricing" class="mobile-nav-link" target="_blank">Pricing</a>
+            <a href="https://certxa.com/login" class="mobile-nav-link" target="_blank">Log In</a>
+            <a href="https://certxa.com/signup" class="btn btn--primary" style="margin-top:1rem;display:inline-block;" target="_blank">Get Started</a>
         </div>
     </div>
 </header>
