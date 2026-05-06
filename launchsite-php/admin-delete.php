@@ -62,8 +62,10 @@ if ($errors) {
 
 // ── Remove entry from templates.php ──────────────────────────────────────────
 $tpl_content = file_get_contents($templates_file);
+// Match the full entry block: key opens with `[`, closes with a `],` on its own
+// line at 4-space indent (not the nested `features => ['...'],` which is inline).
 $tpl_content = preg_replace(
-    "/\n    '" . preg_quote($template_id, '/') . "' => \[.*?\],\n/s",
+    "/\n    '" . preg_quote($template_id, '/') . "' => \[.*?\n    \],\n/s",
     "\n",
     $tpl_content
 );
