@@ -159,6 +159,16 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                                     data-name="<?php echo htmlspecialchars($t['name']); ?>">
                                 Replace
                             </button>
+                            <?php $has_source = is_dir(dirname(dirname(__DIR__)) . '/artifacts/template-' . $id); ?>
+                            <?php if ($has_source): ?>
+                            <form method="POST" action="<?php echo BASE_PATH; ?>/admin-detect.php" style="display:inline;">
+                                <input type="hidden" name="template_id" value="<?php echo htmlspecialchars($id); ?>">
+                                <button type="submit" class="tbl-link tbl-link--sync"
+                                        title="Re-scan source code and update name, colors, hero text &amp; thumbnail">
+                                    Re-sync
+                                </button>
+                            </form>
+                            <?php endif; ?>
                             <?php endif; ?>
                             <form method="POST" action="<?php echo BASE_PATH; ?>/admin-thumb.php" style="display:inline;">
                                 <input type="hidden" name="template_id" value="<?php echo htmlspecialchars($id); ?>">
