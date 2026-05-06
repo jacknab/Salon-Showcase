@@ -24,6 +24,7 @@ export const onboardingSubmissionsTable = pgTable("onboarding_submissions", {
   subdomain:            text("subdomain"),                        // slug only, e.g. 'sophiessalon'
   custom_domain:        text("custom_domain"),                    // e.g. 'mysalon.co.uk'
   domain_payment_status: text("domain_payment_status").default("pending"), // 'pending' | 'paid'
+  hero_image:           text("hero_image"),                        // filename from media library, e.g. 'luxury-nails-spa.jpg'
   plan:                 text("plan").notNull().default("free"),   // 'free' | 'subscriber'
   powered_by_certxa:    boolean("powered_by_certxa").notNull().default(true),
   status:               text("status").notNull().default("pending"),

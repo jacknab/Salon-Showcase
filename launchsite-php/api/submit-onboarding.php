@@ -52,6 +52,7 @@ $country       = opt($body, 'country') ?? 'GB';
 $email         = req($body, 'contact_email');
 $domain_type   = req($body, 'domain_type'); // 'subdomain' | 'custom'
 $booking       = !empty($body['booking_enabled']) ? 't' : 'f';
+$hero_image    = opt($body, 'hero_image');   // filename only, e.g. 'luxury-nails-spa.jpg'
 
 // Validate email
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -128,12 +129,12 @@ try {
          (template_id, business_name, phone, address_line1, address_line2,
           city, county_state, postcode, country, contact_email, hours,
           booking_enabled, domain_type, subdomain, custom_domain,
-          domain_payment_status, plan, powered_by_certxa, status)
+          domain_payment_status, hero_image, plan, powered_by_certxa, status)
          VALUES
          (:tid, :bname, :phone, :addr1, :addr2,
           :city, :county, :postcode, :country, :email, :hours::jsonb,
           :booking, :dtype, :subdomain, :custom_domain,
-          :dpay, :plan, TRUE, :status)
+          :dpay, :hero_image, :plan, TRUE, :status)
          RETURNING id'
     );
 
@@ -157,6 +158,7 @@ try {
         ':subdomain'    => $subdomain,
         ':custom_domain'=> $custom_domain,
         ':dpay'         => $dpay,
+        ':hero_image'   => $hero_image,
         ':plan'         => 'free',
         ':status'       => $status,
     ]);

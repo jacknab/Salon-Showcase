@@ -1362,6 +1362,78 @@ body {
     max-width: 320px;
 }
 
+/* ── Hero image picker ── */
+.hero-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 1.25rem;
+}
+.hero-picker-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+    background: rgba(255,255,255,0.05);
+}
+.hero-picker-card:hover { transform: translateY(-2px); border-color: rgba(168,85,247,0.5); }
+.hero-picker-card.selected { border-color: var(--color-orange); }
+.hero-picker-img {
+    width: 100%;
+    aspect-ratio: 16/10;
+    background-size: cover;
+    background-position: center;
+}
+.hero-picker-check {
+    display: none;
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-orange);
+    align-items: center;
+    justify-content: center;
+}
+.hero-picker-card.selected .hero-picker-check { display: flex; }
+.hero-picker-name {
+    padding: 5px 7px;
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.hero-picker-card.selected .hero-picker-name { color: var(--color-orange); }
+.hero-picker-empty {
+    padding: 28px 20px;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+    border: 1px dashed rgba(255,255,255,0.1);
+}
+.hero-picker-empty p { font-size: 0.85rem; color: rgba(255,255,255,0.4); margin: 0 0 6px; }
+.hero-picker-empty p:first-child { font-weight: 600; color: rgba(255,255,255,0.6); }
+.hero-picker-skip {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.35);
+    margin: 0;
+    text-align: center;
+}
+.btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-purple-light);
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.btn-link:hover { color: var(--color-orange); }
+
 /* ── Domain type cards ── */
 .domain-type-cards {
     display: grid;

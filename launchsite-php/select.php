@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/data/templates.php';
+require_once __DIR__ . '/admin-lib.php';
 
 $id = isset($_GET['id']) ? trim($_GET['id']) : '';
 
@@ -11,6 +12,23 @@ if (!$id || !isset($all_templates[$id])) {
 
 $t = $all_templates[$id];
 $page_title = 'Get Started with ' . $t['name'];
+
+// Load hero images for this template's category
+$_cat_slug    = launchit_category_slug($t['category']);
+$_media_dir   = launchit_media_dir($t['category']);
+$hero_images  = [];
+if (is_dir($_media_dir)) {
+    $files = glob($_media_dir . '/*.{jpg,jpeg,png,webp}', GLOB_BRACE) ?: [];
+    usort($files, fn($a, $b) => filemtime($b) <=> filemtime($a));
+    foreach ($files as $f) {
+        $bn = basename($f);
+        $hero_images[] = [
+            'file' => $bn,
+            'name' => pathinfo($bn, PATHINFO_FILENAME),
+            'url'  => BASE_PATH . '/media/' . $_cat_slug . '/hero_images/' . rawurlencode($bn),
+        ];
+    }
+}
 
 $category_map = [
     'Hair Salon'  => 'hair-salons.php',
@@ -101,16 +119,21 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="wizard-step-line"></div>
                         <div class="wizard-step-dot" data-step="2">
                             <span class="wsd-num">2</span>
-                            <span class="wsd-label">Hours</span>
+                            <span class="wsd-label">Hero Image</span>
                         </div>
                         <div class="wizard-step-line"></div>
                         <div class="wizard-step-dot" data-step="3">
                             <span class="wsd-num">3</span>
-                            <span class="wsd-label">Booking</span>
+                            <span class="wsd-label">Hours</span>
                         </div>
                         <div class="wizard-step-line"></div>
                         <div class="wizard-step-dot" data-step="4">
                             <span class="wsd-num">4</span>
+                            <span class="wsd-label">Booking</span>
+                        </div>
+                        <div class="wizard-step-line"></div>
+                        <div class="wizard-step-dot" data-step="5">
+                            <span class="wsd-num">5</span>
                             <span class="wsd-label">Your Domain</span>
                         </div>
                     </div>
@@ -118,7 +141,7 @@ require_once __DIR__ . '/includes/header.php';
                     <!-- ── Step 1: Business Info ── -->
                     <div class="wizard-panel" id="panel1">
                         <div class="wizard-panel-header">
-                            <div class="select-step-badge">Step 1 of 4</div>
+                            <div class="select-step-badge">Step 1 of 5</div>
                             <h2>Your Business</h2>
                             <p>Tell us about your salon so we can personalise your new website.</p>
                         </div>
@@ -162,10 +185,41 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </div>
 
-                    <!-- ── Step 2: Business Hours ── -->
+                    <!-- ── Step 2: Hero Image ── -->
                     <div class="wizard-panel" id="panel2" hidden>
                         <div class="wizard-panel-header">
-                            <div class="select-step-badge">Step 2 of 4</div>
+                            <div class="select-step-badge">Step 2 of 5</div>
+                            <h2>Hero Image</h2>
+                            <p>Pick a photo for your website&#8217;s homepage. This is optional &#8212; you can always change it later.</p>
+                        </div>
+                        <?php if (empty($hero_images)): ?>
+                        <div class="hero-picker-empty">
+                            <p>No images in the library for <?php echo htmlspecialchars($t['category']); ?> yet.</p>
+                            <p>Your template&#8217;s default photo will be used. You can upload images from the admin panel later.</p>
+                        </div>
+                        <?php else: ?>
+                        <div class="hero-picker-grid" id="heroPicker">
+                            <?php foreach ($hero_images as $img): ?>
+                            <div class="hero-picker-card" data-file="<?php echo htmlspecialchars($img['file']); ?>" data-url="<?php echo htmlspecialchars($img['url']); ?>">
+                                <div class="hero-picker-img" style="background-image:url('<?php echo htmlspecialchars($img['url']); ?>')"></div>
+                                <div class="hero-picker-check">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M3 8l3.5 3.5L13 5"/></svg>
+                                </div>
+                                <div class="hero-picker-name"><?php echo htmlspecialchars($img['name']); ?></div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                        <p class="hero-picker-skip">
+                            <?php if (!empty($hero_images)): ?>No preference? <?php endif; ?>
+                            <button type="button" class="btn-link" id="heroSkip">Skip &#8212; use the template default</button>
+                        </p>
+                    </div>
+
+                    <!-- ── Step 3: Business Hours ── -->
+                    <div class="wizard-panel" id="panel3" hidden>
+                        <div class="wizard-panel-header">
+                            <div class="select-step-badge">Step 3 of 5</div>
                             <h2>Business Hours</h2>
                             <p>We&#8217;ll add these directly to your website. You can always edit them later.</p>
                         </div>
@@ -180,10 +234,10 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </div>
 
-                    <!-- ── Step 3: Online Booking ── -->
-                    <div class="wizard-panel" id="panel3" hidden>
+                    <!-- ── Step 4: Online Booking ── -->
+                    <div class="wizard-panel" id="panel4" hidden>
                         <div class="wizard-panel-header">
-                            <div class="select-step-badge">Step 3 of 4</div>
+                            <div class="select-step-badge">Step 4 of 5</div>
                             <h2>Online Booking</h2>
                             <p>Let clients book appointments directly from your website.</p>
                         </div>
@@ -207,10 +261,10 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </div>
 
-                    <!-- ── Step 4: Domain ── -->
-                    <div class="wizard-panel" id="panel4" hidden>
+                    <!-- ── Step 5: Domain ── -->
+                    <div class="wizard-panel" id="panel5" hidden>
                         <div class="wizard-panel-header">
-                            <div class="select-step-badge">Step 4 of 4</div>
+                            <div class="select-step-badge">Step 5 of 5</div>
                             <h2>Your Domain</h2>
                             <p>Choose how people will find your website.</p>
                         </div>
@@ -327,10 +381,11 @@ require_once __DIR__ . '/includes/header.php';
 (function () {
 'use strict';
 
-var TEMPLATE_ID = <?php echo json_encode($id); ?>;
-var API_BASE    = <?php echo json_encode($api_base); ?>;
-var TOTAL_STEPS = 4;
-var currentStep = 1;
+var TEMPLATE_ID       = <?php echo json_encode($id); ?>;
+var API_BASE          = <?php echo json_encode($api_base); ?>;
+var TOTAL_STEPS       = 5;
+var currentStep       = 1;
+var selectedHeroImage = null; // filename chosen in step 2
 
 // ── Hours data ───────────────────────────────────────────────────────────────
 var DAYS = [
@@ -401,6 +456,27 @@ function collectHours() {
         };
     });
     return result;
+}
+
+// ── Hero image picker ─────────────────────────────────────────────────────────
+var pickerCards = document.querySelectorAll('.hero-picker-card');
+pickerCards.forEach(function (card) {
+    card.addEventListener('click', function () {
+        // Deselect all
+        pickerCards.forEach(function (c) { c.classList.remove('selected'); });
+        // Select this one
+        card.classList.add('selected');
+        selectedHeroImage = card.dataset.file;
+    });
+});
+
+var heroSkipBtn = document.getElementById('heroSkip');
+if (heroSkipBtn) {
+    heroSkipBtn.addEventListener('click', function () {
+        pickerCards.forEach(function (c) { c.classList.remove('selected'); });
+        selectedHeroImage = null;
+        showStep(currentStep + 1);
+    });
 }
 
 // ── Domain type toggle ────────────────────────────────────────────────────────
@@ -525,7 +601,8 @@ function validateStep(n) {
         }
         return true;
     }
-    if (n === 2) {
+    if (n === 2) { return true; } // Hero image — optional, always valid
+    if (n === 3) {
         // Basic hours sanity (open < close for non-closed days)
         var ok = true;
         document.querySelectorAll('.hours-row').forEach(function (row) {
@@ -540,8 +617,8 @@ function validateStep(n) {
         }
         return true;
     }
-    if (n === 3) { return true; } // Booking step — always valid (locked)
-    if (n === 4) {
+    if (n === 4) { return true; } // Booking step — always valid (locked)
+    if (n === 5) {
         var dtype = document.querySelector('input[name="domain_type"]:checked').value;
         if (dtype === 'subdomain') {
             var slug = subInput.value.trim();
@@ -570,7 +647,7 @@ btnBack.addEventListener('click', function () {
 
 // ── Submit ────────────────────────────────────────────────────────────────────
 btnSubmit.addEventListener('click', function () {
-    if (!validateStep(4)) return;
+    if (!validateStep(5)) return;
 
     var dtype  = document.querySelector('input[name="domain_type"]:checked').value;
     var payload = {
@@ -586,6 +663,7 @@ btnSubmit.addEventListener('click', function () {
         country:         'GB',
         hours:           collectHours(),
         booking_enabled: false,
+        hero_image:      selectedHeroImage || '',
         domain_type:     dtype,
         subdomain:       dtype === 'subdomain' ? subInput.value.trim() : '',
         custom_domain:   dtype === 'custom'    ? document.getElementById('f_custom_domain').value.trim() : '',
@@ -606,7 +684,7 @@ btnSubmit.addEventListener('click', function () {
             var msg = res.data.error || 'Something went wrong. Please try again.';
             if (res.data.error === 'subdomain_taken') {
                 msg = 'That subdomain was just taken \u2014 please choose another.';
-                showStep(4);
+                showStep(5);
                 subAvailable = false;
                 clearSubdomainStatus();
             }
