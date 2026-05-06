@@ -186,6 +186,10 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                                     data-category="<?php echo htmlspecialchars($t['category']); ?>">
                                 Duplicate
                             </button>
+                            <button class="tbl-link tbl-link--edit btn-edit"
+                                    data-id="<?php echo htmlspecialchars($id); ?>">
+                                Edit
+                            </button>
                             <button class="tbl-link tbl-link--delete btn-delete"
                                     data-id="<?php echo htmlspecialchars($id); ?>"
                                     data-name="<?php echo htmlspecialchars($t['name']); ?>"
@@ -248,6 +252,112 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                             🗑️ Delete Permanently
                         </button>
                         <button type="button" class="btn-admin btn-admin--ghost" onclick="closeDeleteModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Template Modal -->
+    <div id="editModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box modal-box--wide">
+            <div class="modal-header">
+                <div class="modal-title">Edit Template Entry</div>
+                <button class="modal-close" onclick="closeEditModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-template-info" id="editTemplateName"></div>
+                <form id="editForm" method="POST"
+                      action="<?php echo BASE_PATH; ?>/admin-edit.php"
+                      onsubmit="return confirmEdit()">
+                    <input type="hidden" name="template_id" id="editTemplateId">
+
+                    <div class="edit-grid">
+                        <div class="form-group">
+                            <label class="form-label">Display name</label>
+                            <input type="text" name="name" id="editName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <select name="category" id="editCategory" class="form-select" required>
+                                <option value="Hair Salon">Hair Salon</option>
+                                <option value="Barbershop">Barbershop</option>
+                                <option value="Nail Salon">Nail Salon</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Style tag</label>
+                            <input type="text" name="style" id="editStyle" class="form-input"
+                                   placeholder="e.g. Modern, Classic, Luxury">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Badge</label>
+                            <select name="badge" id="editBadge" class="form-select">
+                                <option value="">— none —</option>
+                                <option value="new">new</option>
+                                <option value="popular">popular</option>
+                                <option value="premium">premium</option>
+                            </select>
+                        </div>
+                        <div class="form-group edit-grid__full">
+                            <label class="form-label">Description</label>
+                            <textarea name="desc" id="editDesc" class="form-input form-textarea"
+                                      rows="3" placeholder="Short catalog card description"></textarea>
+                        </div>
+                        <div class="form-group edit-grid__full">
+                            <label class="form-label">Features <span style="color:rgba(255,255,255,0.35);font-weight:400;">comma-separated</span></label>
+                            <input type="text" name="features" id="editFeatures" class="form-input"
+                                   placeholder="e.g. Booking, Gallery, Services">
+                        </div>
+                        <div class="form-group edit-grid__full">
+                            <label class="form-label">Hero tagline</label>
+                            <input type="text" name="hero_tagline" id="editHeroTagline" class="form-input">
+                        </div>
+                        <div class="form-group edit-grid__full">
+                            <label class="form-label">Hero sub-heading</label>
+                            <input type="text" name="hero_sub" id="editHeroSub" class="form-input">
+                        </div>
+                        <div class="form-group edit-grid__full">
+                            <label class="form-label">Business name</label>
+                            <input type="text" name="business_name" id="editBusinessName" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Accent color</label>
+                            <div class="color-row">
+                                <input type="color" id="editAccentPicker" class="color-swatch"
+                                       oninput="document.getElementById('editAccent').value=this.value">
+                                <input type="text" name="accent" id="editAccent" class="form-input form-input--color"
+                                       placeholder="#a855f7" maxlength="7"
+                                       oninput="syncPicker('editAccentPicker',this.value)">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Dark bg color</label>
+                            <div class="color-row">
+                                <input type="color" id="editDarkPicker" class="color-swatch"
+                                       oninput="document.getElementById('editDark').value=this.value">
+                                <input type="text" name="dark" id="editDark" class="form-input form-input--color"
+                                       placeholder="#0a0b15" maxlength="7"
+                                       oninput="syncPicker('editDarkPicker',this.value)">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Light bg color</label>
+                            <div class="color-row">
+                                <input type="color" id="editLightPicker" class="color-swatch"
+                                       oninput="document.getElementById('editLight').value=this.value">
+                                <input type="text" name="light" id="editLight" class="form-input form-input--color"
+                                       placeholder="#1c1d27" maxlength="7"
+                                       oninput="syncPicker('editLightPicker',this.value)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions" style="margin-top:24px;">
+                        <button type="submit" class="btn-admin btn-admin--primary" id="editSaveBtn">
+                            💾 Save Changes
+                        </button>
+                        <button type="button" class="btn-admin btn-admin--ghost" onclick="closeEditModal()">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -626,6 +736,63 @@ function confirmUploadThumb() {
     return true;
 }
 
+// ── Edit modal ────────────────────────────────────────────────────────────────
+const _tplData = <?php echo json_encode($all_templates, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+function syncPicker(pickerId, hex) {
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+        document.getElementById(pickerId).value = hex;
+    }
+}
+
+document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const t  = _tplData[id];
+        if (!t) return;
+        document.getElementById('editTemplateId').value        = id;
+        document.getElementById('editTemplateName').textContent = t.name + '  (' + id + ')';
+        document.getElementById('editName').value              = t.name        || '';
+        document.getElementById('editCategory').value          = t.category    || 'Hair Salon';
+        document.getElementById('editStyle').value             = t.style       || '';
+        document.getElementById('editBadge').value             = t.badge       || '';
+        document.getElementById('editDesc').value              = t.desc        || '';
+        document.getElementById('editFeatures').value          = (t.features || []).join(', ');
+        document.getElementById('editHeroTagline').value       = t.hero_tagline || '';
+        document.getElementById('editHeroSub').value           = t.hero_sub     || '';
+        document.getElementById('editBusinessName').value      = t.business_name || '';
+        // Colors
+        const accent = t.accent || '#a855f7';
+        const dark   = t.dark   || '#0a0b15';
+        const light  = t.light  || '#1c1d27';
+        document.getElementById('editAccent').value       = accent;
+        document.getElementById('editAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(accent) ? accent : '#a855f7';
+        document.getElementById('editDark').value         = dark;
+        document.getElementById('editDarkPicker').value   = /^#[0-9a-fA-F]{6}$/.test(dark)   ? dark   : '#0a0b15';
+        document.getElementById('editLight').value        = light;
+        document.getElementById('editLightPicker').value  = /^#[0-9a-fA-F]{6}$/.test(light)  ? light  : '#1c1d27';
+        // Reset button
+        document.getElementById('editSaveBtn').innerHTML = '💾 Save Changes';
+        document.getElementById('editSaveBtn').disabled  = false;
+        document.getElementById('editModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    });
+});
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+function confirmEdit() {
+    const btn = document.getElementById('editSaveBtn');
+    btn.innerHTML = '<span class="spinner"></span> Saving…';
+    btn.disabled  = true;
+    return true;
+}
+
 // ── Duplicate modal ───────────────────────────────────────────────────────────
 const _existingIds = <?php echo json_encode(array_keys($all_templates)); ?>;
 
@@ -697,6 +864,7 @@ document.addEventListener('keydown', e => {
         closeDeleteModal();
         closeUploadThumbModal();
         closeDuplicateModal();
+        closeEditModal();
     }
 });
 </script>
