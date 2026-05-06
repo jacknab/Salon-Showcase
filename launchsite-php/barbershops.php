@@ -2,80 +2,8 @@
 $page_title = 'Barbershop Templates';
 require_once __DIR__ . '/config.php';
 
-$templates = [
-    [
-        'id'       => 'urban-blade',
-        'name'     => 'Urban Blade',
-        'style'    => 'Modern',
-        'desc'     => 'A clean, modern layout built for the contemporary barbershop. Dark accents, bold typography, and a seamless booking experience.',
-        'badge'    => 'popular',
-        'features' => ['Online Booking', 'Services Menu', 'Gallery'],
-        'accent'   => '#00bcd4',
-        'dark'     => '#081515',
-        'light'    => '#0f2020',
-        'url_slug' => 'urban-blade',
-    ],
-    [
-        'id'       => 'the-barbery',
-        'name'     => 'The Barbery',
-        'style'    => 'Classic',
-        'desc'     => 'Old-school meets new-school. A rich, heritage-inspired design with barber pole motifs, warm photography, and a polished service menu.',
-        'badge'    => 'premium',
-        'features' => ['Barber Profiles', 'Pricing', 'Map'],
-        'accent'   => '#c8a86b',
-        'dark'     => '#1a1000',
-        'light'    => '#2a1c08',
-        'url_slug' => 'the-barbery',
-    ],
-    [
-        'id'       => 'midnight-cuts',
-        'name'     => 'Midnight Cuts',
-        'style'    => 'Dark & Bold',
-        'desc'     => 'A dramatic, all-dark design for shops that want to project exclusivity and style. High contrast, strong imagery, minimal distractions.',
-        'badge'    => 'premium',
-        'features' => ['Portfolio', 'Booking', 'Reviews'],
-        'accent'   => '#e53935',
-        'dark'     => '#050505',
-        'light'    => '#150a0a',
-        'url_slug' => 'midnight-cuts',
-    ],
-    [
-        'id'       => 'razor-sharp',
-        'name'     => 'Razor Sharp',
-        'style'    => 'Bold',
-        'desc'     => 'Punchy, high-energy template with large hero sections and animated feature highlights. Built for shops with personality.',
-        'badge'    => 'new',
-        'features' => ['Services', 'Team', 'Booking'],
-        'accent'   => '#ff6d00',
-        'dark'     => '#1a0a00',
-        'light'    => '#281000',
-        'url_slug' => 'razor-sharp',
-    ],
-    [
-        'id'       => 'gentlemans-club',
-        'name'     => "Gentleman's Club",
-        'style'    => 'Luxury',
-        'desc'     => 'An upscale, members-club aesthetic for premium barbershops. Deep tones, refined typography, and an experience that conveys prestige.',
-        'badge'    => 'premium',
-        'features' => ['Membership', 'Booking', 'Gallery'],
-        'accent'   => '#c9a227',
-        'dark'     => '#0d0608',
-        'light'    => '#1a0d10',
-        'url_slug' => 'gentlemans-club',
-    ],
-    [
-        'id'       => 'fresh-fades',
-        'name'     => 'Fresh Fades',
-        'style'    => 'Street',
-        'desc'     => 'Urban, street-culture-inspired design for fade specialists and hip-hop influenced shops. Bright accents on dark backgrounds.',
-        'badge'    => 'new',
-        'features' => ['Gallery', 'Booking', 'Services'],
-        'accent'   => '#ffd600',
-        'dark'     => '#0a0a14',
-        'light'    => '#151520',
-        'url_slug' => 'fresh-fades',
-    ],
-];
+require_once __DIR__ . '/data/templates.php';
+$templates = array_values(array_filter($all_templates, fn($t) => $t['category'] === 'Barbershop'));
 
 require_once __DIR__ . '/includes/header.php';
 ?>
