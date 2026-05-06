@@ -148,11 +148,71 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                                 Replace
                             </button>
                             <?php endif; ?>
+                            <button class="tbl-link tbl-link--delete btn-delete"
+                                    data-id="<?php echo htmlspecialchars($id); ?>"
+                                    data-name="<?php echo htmlspecialchars($t['name']); ?>"
+                                    data-type="<?php echo htmlspecialchars($type); ?>">
+                                Delete
+                            </button>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">Delete Template</div>
+                <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-template-info modal-template-info--danger" id="deleteTemplateName"></div>
+                <p class="modal-desc" style="color:rgba(248,113,113,0.8);">
+                    This will permanently remove the template from the catalog and delete all associated files.
+                    This cannot be undone.
+                </p>
+                <div id="deleteReactNote" class="modal-delete-note" style="display:none;">
+                    The following will be deleted:
+                    <ul class="modal-delete-list">
+                        <li>Catalog registration in <code>data/templates.php</code></li>
+                        <li>Built site files in <code>launchsite-php/templates/{id}/</code></li>
+                        <li>Source files in <code>artifacts/template-{id}/</code></li>
+                        <li>Thumbnail image</li>
+                    </ul>
+                </div>
+                <div id="deletePhpNote" class="modal-delete-note" style="display:none;">
+                    The following will be deleted:
+                    <ul class="modal-delete-list">
+                        <li>Catalog registration in <code>data/templates.php</code></li>
+                        <li>Thumbnail image</li>
+                    </ul>
+                    <p style="margin-top:8px;color:rgba(255,255,255,0.3);font-size:0.75rem;">
+                        PHP template files are not deleted — remove them manually if needed.
+                    </p>
+                </div>
+                <form id="deleteForm" method="POST" action="<?php echo BASE_PATH; ?>/admin-delete.php"
+                      onsubmit="return confirmDelete()">
+                    <input type="hidden" name="template_id" id="deleteTemplateId">
+                    <div class="form-group" style="margin-top:18px;">
+                        <label class="form-label" style="color:rgba(248,113,113,0.7);">
+                            Type the template ID to confirm
+                        </label>
+                        <input type="text" id="deleteConfirmInput" class="form-input form-input--danger"
+                               placeholder="e.g. luxury-nails-spa" autocomplete="off" spellcheck="false">
+                        <span class="form-hint" id="deleteConfirmHint"></span>
+                    </div>
+                    <div class="modal-actions" style="margin-top:20px;">
+                        <button type="submit" class="btn-admin btn-admin--danger" id="deleteBtn" disabled>
+                            🗑️ Delete Permanently
+                        </button>
+                        <button type="button" class="btn-admin btn-admin--ghost" onclick="closeDeleteModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -279,6 +339,54 @@ function confirmInstall() {
     return true;
 }
 
+// ── Delete modal ─────────────────────────────────────────────────────────────
+let _deleteId = '';
+
+document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+        _deleteId = btn.dataset.id;
+        const name = btn.dataset.name;
+        const type = btn.dataset.type;
+        document.getElementById('deleteTemplateId').value   = _deleteId;
+        document.getElementById('deleteTemplateName').textContent = name + '  (' + _deleteId + ')';
+        document.getElementById('deleteConfirmInput').value  = '';
+        document.getElementById('deleteConfirmHint').textContent = 'Must match: ' + _deleteId;
+        document.getElementById('deleteBtn').disabled = true;
+        document.getElementById('deleteReactNote').style.display = type === 'react' ? 'block' : 'none';
+        document.getElementById('deletePhpNote').style.display   = type === 'php'   ? 'block' : 'none';
+        // Fill {id} placeholder in the note list
+        document.querySelectorAll('#deleteReactNote li').forEach(li => {
+            li.innerHTML = li.innerHTML.replace(/\{id\}/g, _deleteId);
+        });
+        document.getElementById('deleteModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('deleteConfirmInput').focus(), 80);
+    });
+});
+
+document.getElementById('deleteConfirmInput').addEventListener('input', function() {
+    const matches = this.value.trim() === _deleteId;
+    document.getElementById('deleteBtn').disabled = !matches;
+    this.style.borderColor = this.value ? (matches ? 'rgba(52,211,153,0.6)' : 'rgba(248,113,113,0.4)') : '';
+});
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+
+function confirmDelete() {
+    if (document.getElementById('deleteConfirmInput').value.trim() !== _deleteId) return false;
+    const btn = document.getElementById('deleteBtn');
+    btn.innerHTML = '<span class="spinner"></span> Deleting…';
+    btn.disabled  = true;
+    return true;
+}
+
 // ── Replace modal ────────────────────────────────────────────────────────────
 document.querySelectorAll('.btn-replace').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -338,9 +446,12 @@ function confirmReplace() {
     return true;
 }
 
-// Close modal on Escape key
+// Close modals on Escape key
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeReplaceModal();
+    if (e.key === 'Escape') {
+        closeReplaceModal();
+        closeDeleteModal();
+    }
 });
 </script>
 <?php endif; ?>
