@@ -155,9 +155,10 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
             <span class="admin-card__title">Upload New React/Vite Template</span>
         </div>
         <div class="admin-card__body">
-            <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:20px;line-height:1.6;">
-                Upload a zipped React/Vite project. If the zip contains a <code style="color:#a78bfa">launchit.json</code> file, the form fields below will be filled in automatically.
-                The admin will install dependencies, build the app, register it in the catalog, and generate a thumbnail — all automatically.
+            <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:24px;line-height:1.7;">
+                Upload your zipped React/Vite project and select a category. Everything else — the template name,
+                colors, hero text, and business name — is detected automatically from your source files.
+                Dependencies are installed and the site is built and registered in the catalog automatically.
             </p>
 
             <form id="uploadForm" method="POST" action="<?php echo BASE_PATH; ?>/admin-install.php"
@@ -167,115 +168,31 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                 <div class="upload-drop" id="dropZone" onclick="document.getElementById('zipFile').click()">
                     <div class="upload-drop__icon">📦</div>
                     <div class="upload-drop__title">Drop your ZIP file here, or click to browse</div>
-                    <div class="upload-drop__sub">Accepts .zip files up to 50 MB</div>
+                    <div class="upload-drop__sub">Accepts .zip files up to 50 MB · React/Vite projects only</div>
                     <div class="upload-drop__filename" id="fileNameDisplay" style="display:none;"></div>
                     <input type="file" name="zipfile" id="zipFile" accept=".zip" required>
                 </div>
 
-                <div class="form-section-title">Template Identity</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Template ID *</label>
-                        <input type="text" name="id" id="fId" class="form-input"
-                               placeholder="e.g. luxury-nails-spa" required
-                               pattern="[a-z0-9\-]+"
-                               title="Lowercase letters, numbers, and hyphens only">
-                        <span class="form-hint">Lowercase, hyphens only. Used in the URL.</span>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Template Name *</label>
-                        <input type="text" name="name" id="fName" class="form-input"
-                               placeholder="e.g. Luxury Nails Spa" required>
-                    </div>
-                    <div class="form-group">
+                <div class="form-section-title">One required field</div>
+                <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:16px;max-width:560px;">
+                    <div class="form-group" style="grid-column:1/-1;">
                         <label class="form-label">Category *</label>
                         <select name="category" id="fCategory" class="form-select" required>
-                            <option value="">— Select —</option>
+                            <option value="">— Select category —</option>
                             <option value="Hair Salon">Hair Salon</option>
                             <option value="Barbershop">Barbershop</option>
                             <option value="Nail Salon">Nail Salon</option>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Badge</label>
-                        <select name="badge" id="fBadge" class="form-select">
-                            <option value="">None</option>
-                            <option value="new">New</option>
-                            <option value="popular">Popular</option>
-                            <option value="premium">Premium</option>
-                        </select>
-                    </div>
-                    <div class="form-group form-group--full">
-                        <label class="form-label">Description</label>
-                        <textarea name="desc" id="fDesc" class="form-textarea"
-                                  placeholder="Short description shown in the catalog card…"></textarea>
+                        <span class="form-hint">All other info (name, colors, hero text) is read from your source files.</span>
                     </div>
                 </div>
 
-                <div class="form-section-title">Display Colors</div>
-                <div class="form-grid form-grid--3">
-                    <div class="form-group">
-                        <label class="form-label">Accent Color</label>
-                        <div class="color-row">
-                            <input type="color" name="accent_pick" id="fAccentPick" class="form-color" value="#7c3aed"
-                                   oninput="document.getElementById('fAccent').value=this.value">
-                            <input type="text" name="accent" id="fAccent" class="form-input" value="#7c3aed"
-                                   placeholder="#7c3aed"
-                                   oninput="document.getElementById('fAccentPick').value=this.value">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Dark Background</label>
-                        <div class="color-row">
-                            <input type="color" name="dark_pick" id="fDarkPick" class="form-color" value="#0a0b15"
-                                   oninput="document.getElementById('fDark').value=this.value">
-                            <input type="text" name="dark" id="fDark" class="form-input" value="#0a0b15"
-                                   placeholder="#0a0b15"
-                                   oninput="document.getElementById('fDarkPick').value=this.value">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Light Background</label>
-                        <div class="color-row">
-                            <input type="color" name="light_pick" id="fLightPick" class="form-color" value="#151829"
-                                   oninput="document.getElementById('fLight').value=this.value">
-                            <input type="text" name="light" id="fLight" class="form-input" value="#151829"
-                                   placeholder="#151829"
-                                   oninput="document.getElementById('fLightPick').value=this.value">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section-title">Catalog & Preview Copy</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Business Name</label>
-                        <input type="text" name="business_name" id="fBusinessName" class="form-input"
-                               placeholder="e.g. Luxury Nails Spa">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Style Tag</label>
-                        <input type="text" name="style" id="fStyle" class="form-input"
-                               placeholder="e.g. Luxury Spa">
-                    </div>
-                    <div class="form-group form-group--full">
-                        <label class="form-label">Hero Tagline</label>
-                        <input type="text" name="hero_tagline" id="fHeroTagline" class="form-input"
-                               placeholder="e.g. Where beauty meets relaxation.">
-                    </div>
-                    <div class="form-group form-group--full">
-                        <label class="form-label">Hero Sub-Text</label>
-                        <input type="text" name="hero_sub" id="fHeroSub" class="form-input"
-                               placeholder="e.g. Experience premium nail care in an elegant environment.">
-                    </div>
-                </div>
-
-                <div class="form-actions">
+                <div class="form-actions" style="margin-top:24px;">
                     <button type="submit" class="btn-admin btn-admin--orange" id="installBtn">
                         🚀 Install Template
                     </button>
                     <span style="color:rgba(255,255,255,0.3);font-size:0.8rem;align-self:center;">
-                        This will run <code>pnpm install</code> + <code>vite build</code> — may take 30–60 seconds.
+                        Installs dependencies, builds, registers in catalog &amp; generates thumbnail — ~30–90 s
                     </span>
                 </div>
             </form>
@@ -284,9 +201,8 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
 </div>
 
 <script>
-// ── Drag & drop ──
-const dropZone = document.getElementById('dropZone');
-const zipFile  = document.getElementById('zipFile');
+const dropZone       = document.getElementById('dropZone');
+const zipFile        = document.getElementById('zipFile');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
 
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
@@ -309,48 +225,17 @@ zipFile.addEventListener('change', () => {
 function onFileSelected(file) {
     fileNameDisplay.textContent = '📦 ' + file.name;
     fileNameDisplay.style.display = 'block';
-    // Auto-fill ID from filename (strip .zip, lowercase, replace spaces/underscores with dashes)
-    const guessId = file.name.replace(/\.zip$/i,'').toLowerCase().replace(/[\s_]+/g,'-').replace(/[^a-z0-9\-]/g,'');
-    if (!document.getElementById('fId').value) {
-        document.getElementById('fId').value = guessId;
-    }
-    // Try to read launchit.json from zip (requires JSZip — skip if unavailable)
-    tryReadManifest(file);
-}
-
-// Try to read launchit.json from the ZIP using the File API + DecompressionStream (not widely available)
-// Simple fallback: just let the user fill the form
-async function tryReadManifest(file) {
-    try {
-        const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')).default;
-        const zip   = await JSZip.loadAsync(file);
-        // Find launchit.json (may be in a subdirectory)
-        let manifest = null;
-        zip.forEach((path, f) => {
-            if (path.endsWith('launchit.json') && !manifest) manifest = f;
-        });
-        if (!manifest) return;
-        const data = JSON.parse(await manifest.async('string'));
-        if (data.id)            document.getElementById('fId').value = data.id;
-        if (data.name)          document.getElementById('fName').value = data.name;
-        if (data.category)      document.getElementById('fCategory').value = data.category;
-        if (data.badge)         document.getElementById('fBadge').value = data.badge;
-        if (data.desc)          document.getElementById('fDesc').value = data.desc;
-        if (data.accent)        { document.getElementById('fAccent').value = data.accent; document.getElementById('fAccentPick').value = data.accent; }
-        if (data.dark)          { document.getElementById('fDark').value = data.dark; document.getElementById('fDarkPick').value = data.dark; }
-        if (data.light)         { document.getElementById('fLight').value = data.light; document.getElementById('fLightPick').value = data.light; }
-        if (data.business_name) document.getElementById('fBusinessName').value = data.business_name;
-        if (data.style)         document.getElementById('fStyle').value = data.style;
-        if (data.hero_tagline)  document.getElementById('fHeroTagline').value = data.hero_tagline;
-        if (data.hero_sub)      document.getElementById('fHeroSub').value = data.hero_sub;
-    } catch(e) { /* silently ignore — user fills form manually */ }
+    dropZone.querySelector('.upload-drop__title').textContent = 'File selected — ready to install';
 }
 
 function confirmInstall() {
-    const id = document.getElementById('fId').value;
-    if (!id) return false;
-    document.getElementById('installBtn').innerHTML = '<span class="spinner"></span> Installing…';
-    document.getElementById('installBtn').disabled = true;
+    if (!document.getElementById('fCategory').value) {
+        alert('Please select a category.');
+        return false;
+    }
+    const btn = document.getElementById('installBtn');
+    btn.innerHTML = '<span class="spinner"></span> Installing… (this takes ~60 s)';
+    btn.disabled = true;
     return true;
 }
 </script>
