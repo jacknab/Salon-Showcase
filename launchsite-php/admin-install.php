@@ -18,14 +18,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 function step(string $icon, string $msg): void {
     echo "<li class='result-step'><span class='result-step__icon'>$icon</span><span>$msg</span></li>\n";
-    ob_flush(); flush();
+    @ob_flush(); flush();
 }
 
 function step_log(string $icon, string $msg, string $log): void {
     $safe = htmlspecialchars(trim($log));
     echo "<li class='result-step'><span class='result-step__icon'>$icon</span>"
        . "<span>$msg<div class='log-block'>$safe</div></span></li>\n";
-    ob_flush(); flush();
+    @ob_flush(); flush();
 }
 
 function abort(string $msg): void {
@@ -343,7 +343,7 @@ if ($upload_code !== UPLOAD_ERR_OK && $upload_code !== 0) {
 
 // ── Paths & environment ───────────────────────────────────────────────────────
 
-$workspace_root = dirname(dirname(__DIR__));
+$workspace_root = dirname(__DIR__);
 $artifacts_dir  = $workspace_root . '/artifacts';
 $thumbs_dir     = __DIR__ . '/assets/img/thumbs';
 $templates_file = __DIR__ . '/data/templates.php';

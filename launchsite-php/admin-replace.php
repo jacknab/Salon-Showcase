@@ -321,7 +321,7 @@ $existing = $errors ? [] : $all_templates[$template_id];
 
 // ── Paths & environment ───────────────────────────────────────────────────────
 
-$workspace_root = dirname(dirname(__DIR__));
+$workspace_root = dirname(__DIR__);
 $artifacts_dir  = $workspace_root . '/artifacts';
 $dest_dir       = $artifacts_dir . '/template-' . $template_id;
 $built_dir      = __DIR__ . '/templates/' . $template_id;

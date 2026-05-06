@@ -30,7 +30,7 @@ if (!$template_id || !isset($all_templates[$template_id])) {
 }
 
 $existing       = $all_templates[$template_id];
-$workspace_root = dirname(dirname(__DIR__));
+$workspace_root = dirname(__DIR__);
 $source_dir     = $workspace_root . '/artifacts/template-' . $template_id;
 $templates_file = __DIR__ . '/data/templates.php';
 $thumbs_dir     = __DIR__ . '/assets/img/thumbs';

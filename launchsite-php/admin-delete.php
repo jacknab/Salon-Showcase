@@ -28,7 +28,7 @@ $template     = $errors ? [] : $all_templates[$template_id];
 $type         = $template['type'] ?? 'php';
 $name         = $template['name'] ?? $template_id;
 
-$workspace_root  = dirname(dirname(__DIR__));
+$workspace_root  = dirname(__DIR__);
 $artifacts_dir   = $workspace_root . '/artifacts';
 $templates_file  = __DIR__ . '/data/templates.php';
 $built_dir       = __DIR__ . '/templates/' . $template_id;
