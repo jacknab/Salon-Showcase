@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Barbershop Templates';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/template-preview.php';
 
 $templates = [
     [
@@ -10,7 +11,10 @@ $templates = [
         'desc'     => 'A clean, modern layout built for the contemporary barbershop. Dark accents, bold typography, and a seamless booking experience.',
         'badge'    => 'popular',
         'features' => ['Online Booking', 'Services Menu', 'Gallery'],
-        'color'    => '#0f1a1a',
+        'accent'   => '#00bcd4',
+        'dark'     => '#081515',
+        'light'    => '#0f2020',
+        'url_slug' => 'urban-blade',
     ],
     [
         'id'       => 'the-barbery',
@@ -19,7 +23,10 @@ $templates = [
         'desc'     => 'Old-school meets new-school. A rich, heritage-inspired design with barber pole motifs, warm photography, and a polished service menu.',
         'badge'    => 'premium',
         'features' => ['Barber Profiles', 'Pricing', 'Map'],
-        'color'    => '#1a1000',
+        'accent'   => '#c8a86b',
+        'dark'     => '#1a1000',
+        'light'    => '#2a1c08',
+        'url_slug' => 'the-barbery',
     ],
     [
         'id'       => 'midnight-cuts',
@@ -28,7 +35,10 @@ $templates = [
         'desc'     => 'A dramatic, all-dark design for shops that want to project exclusivity and style. High contrast, strong imagery, minimal distractions.',
         'badge'    => 'premium',
         'features' => ['Portfolio', 'Booking', 'Reviews'],
-        'color'    => '#050505',
+        'accent'   => '#e53935',
+        'dark'     => '#050505',
+        'light'    => '#150a0a',
+        'url_slug' => 'midnight-cuts',
     ],
     [
         'id'       => 'razor-sharp',
@@ -37,7 +47,10 @@ $templates = [
         'desc'     => 'Punchy, high-energy template with large hero sections and animated feature highlights. Built for shops with personality.',
         'badge'    => 'new',
         'features' => ['Services', 'Team', 'Booking'],
-        'color'    => '#1a0a00',
+        'accent'   => '#ff6d00',
+        'dark'     => '#1a0a00',
+        'light'    => '#281000',
+        'url_slug' => 'razor-sharp',
     ],
     [
         'id'       => 'gentlemans-club',
@@ -46,7 +59,10 @@ $templates = [
         'desc'     => 'An upscale, members-club aesthetic for premium barbershops. Deep tones, refined typography, and an experience that conveys prestige.',
         'badge'    => 'premium',
         'features' => ['Membership', 'Booking', 'Gallery'],
-        'color'    => '#12080a',
+        'accent'   => '#c9a227',
+        'dark'     => '#0d0608',
+        'light'    => '#1a0d10',
+        'url_slug' => 'gentlemans-club',
     ],
     [
         'id'       => 'fresh-fades',
@@ -55,7 +71,10 @@ $templates = [
         'desc'     => 'Urban, street-culture-inspired design for fade specialists and hip-hop influenced shops. Bright accents on dark backgrounds.',
         'badge'    => 'new',
         'features' => ['Gallery', 'Booking', 'Services'],
-        'color'    => '#0a0a1a',
+        'accent'   => '#ffd600',
+        'dark'     => '#0a0a14',
+        'light'    => '#151520',
+        'url_slug' => 'fresh-fades',
     ],
 ];
 
@@ -94,16 +113,13 @@ require_once __DIR__ . '/includes/header.php';
         <div class="template-grid">
             <?php foreach ($templates as $index => $t): ?>
             <div class="template-card" data-category="barbershop" style="transition-delay: <?php echo $index * 60; ?>ms;">
-                <div class="template-card__thumb" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($t['color']); ?>, #0b0d1a);">
+                <div class="template-card__thumb">
                     <?php if (!empty($t['badge'])): ?>
                     <span class="template-card__badge badge--<?php echo htmlspecialchars($t['badge']); ?>">
                         <?php echo ucfirst($t['badge']); ?>
                     </span>
                     <?php endif; ?>
-                    <div class="template-card__thumb-placeholder">
-                        <div class="thumb-icon">✂️</div>
-                        <span><?php echo htmlspecialchars($t['name']); ?></span>
-                    </div>
+                    <?php render_template_preview($t); ?>
                     <div class="template-card__overlay">
                         <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--primary">Live Preview</a>
                         <a href="<?php echo BASE_PATH; ?>/select.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--orange">Use This Design</a>

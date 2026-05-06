@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-
+    /* ── Mobile menu ── */
+    var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    var mobileMenu    = document.getElementById('mobileMenu');
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', function () {
             mobileMenu.classList.toggle('is-open');
@@ -10,37 +10,37 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const filterBtns = document.querySelectorAll('[data-filter]');
-    const templateCards = document.querySelectorAll('[data-category]');
+    /* ── Scroll-preview hover effect ──────────────────────────────────────
+     * On mouseenter: slow downward pan (CSS handles the transition duration)
+     * On mouseleave: snap back to top instantly (remove active class)
+     * We drive the transition entirely via CSS classes so it's silky smooth.
+     * ------------------------------------------------------------------- */
+    document.querySelectorAll('.template-card').forEach(function (card) {
+        var scroll = card.querySelector('.preview-scroll');
+        if (!scroll) return;
 
-    filterBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const filter = btn.getAttribute('data-filter');
+        card.addEventListener('mouseenter', function () {
+            scroll.classList.add('is-scrolling');
+        });
 
-            filterBtns.forEach(function (b) { b.classList.remove('is-active'); });
-            btn.classList.add('is-active');
-
-            templateCards.forEach(function (card) {
-                if (filter === 'all' || card.getAttribute('data-category') === filter) {
-                    card.style.display = '';
-                    setTimeout(function () { card.classList.add('is-visible'); }, 10);
-                } else {
-                    card.classList.remove('is-visible');
-                    card.style.display = 'none';
-                }
-            });
+        card.addEventListener('mouseleave', function () {
+            scroll.classList.remove('is-scrolling');
+            /* Force reflow so the snap-back transition fires immediately */
+            void scroll.offsetHeight;
         });
     });
 
-    const observer = new IntersectionObserver(function (entries) {
+    /* ── Scroll-in entrance animations ── */
+    var observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
             if (entry.isIntersecting) {
                 entry.target.classList.add('in-view');
+                observer.unobserve(entry.target);
             }
         });
-    }, { threshold: 0.08 });
+    }, { threshold: 0.06 });
 
-    document.querySelectorAll('.template-card, .hero-badge, .section-label').forEach(function (el) {
+    document.querySelectorAll('.template-card, .category-card, .hero-badge, .section-label').forEach(function (el) {
         observer.observe(el);
     });
 });

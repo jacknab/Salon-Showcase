@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Hair Salon Templates';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/template-preview.php';
 
 $templates = [
     [
@@ -10,7 +11,10 @@ $templates = [
         'desc'     => 'A high-end editorial feel with large hero imagery, elegant serif typography, and a sleek booking flow — made for premium salons.',
         'badge'    => 'premium',
         'features' => ['Online Booking', 'Gallery', 'Services Menu'],
-        'color'    => '#1a0f2e',
+        'accent'   => '#d4a853',
+        'dark'     => '#1a0a00',
+        'light'    => '#2a1800',
+        'url_slug' => 'luxe-atelier',
     ],
     [
         'id'       => 'studio-bloom',
@@ -19,7 +23,10 @@ $templates = [
         'desc'     => 'Fresh, airy design with soft colour accents. Spotlights your stylists and portfolio with a clean grid layout and smooth animations.',
         'badge'    => 'popular',
         'features' => ['Stylist Profiles', 'Portfolio', 'Reviews'],
-        'color'    => '#0f1a2e',
+        'accent'   => '#7ea58a',
+        'dark'     => '#0a150f',
+        'light'    => '#152015',
+        'url_slug' => 'studio-bloom',
     ],
     [
         'id'       => 'the-salon-co',
@@ -28,7 +35,10 @@ $templates = [
         'desc'     => 'Timeless and professional. A structured layout that clearly communicates services, pricing, and appointment booking.',
         'badge'    => '',
         'features' => ['Pricing Tables', 'Booking', 'Map'],
-        'color'    => '#1a1a2e',
+        'accent'   => '#5b8ace',
+        'dark'     => '#0a0f1a',
+        'light'    => '#141c30',
+        'url_slug' => 'the-salon-co',
     ],
     [
         'id'       => 'maison-beaute',
@@ -37,7 +47,10 @@ $templates = [
         'desc'     => 'French-inspired boutique aesthetic with warm tones and flowing editorial sections. Perfect for colour specialists and balayage experts.',
         'badge'    => 'new',
         'features' => ['Before & After', 'Gallery', 'Online Booking'],
-        'color'    => '#2e1a0f',
+        'accent'   => '#c47a8a',
+        'dark'     => '#1a0a0f',
+        'light'    => '#2a101a',
+        'url_slug' => 'maison-beaute',
     ],
     [
         'id'       => 'noir-studio',
@@ -46,7 +59,10 @@ $templates = [
         'desc'     => 'A dramatic, dark-themed design with strong typography and spotlight photography. Designed for avant-garde stylists who want to stand out.',
         'badge'    => 'premium',
         'features' => ['Portfolio', 'Services', 'Booking'],
-        'color'    => '#0a0a0a',
+        'accent'   => '#e0e0e0',
+        'dark'     => '#050505',
+        'light'    => '#1a1a1a',
+        'url_slug' => 'noir-studio',
     ],
     [
         'id'       => 'sage-collective',
@@ -55,7 +71,10 @@ $templates = [
         'desc'     => 'Natural, earthy design for eco-conscious salons and organic hair care studios. Warm greens, flowing layouts, and sustainability messaging built in.',
         'badge'    => 'new',
         'features' => ['Services', 'Team', 'Booking'],
-        'color'    => '#0f1a0f',
+        'accent'   => '#6a8a5a',
+        'dark'     => '#0a1500',
+        'light'    => '#141f0a',
+        'url_slug' => 'sage-collective',
     ],
 ];
 
@@ -94,16 +113,13 @@ require_once __DIR__ . '/includes/header.php';
         <div class="template-grid">
             <?php foreach ($templates as $index => $t): ?>
             <div class="template-card" data-category="hair-salon" style="transition-delay: <?php echo $index * 60; ?>ms;">
-                <div class="template-card__thumb" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($t['color']); ?>, #0b0d1a);">
+                <div class="template-card__thumb">
                     <?php if (!empty($t['badge'])): ?>
                     <span class="template-card__badge badge--<?php echo htmlspecialchars($t['badge']); ?>">
                         <?php echo ucfirst($t['badge']); ?>
                     </span>
                     <?php endif; ?>
-                    <div class="template-card__thumb-placeholder">
-                        <div class="thumb-icon">💇‍♀️</div>
-                        <span><?php echo htmlspecialchars($t['name']); ?></span>
-                    </div>
+                    <?php render_template_preview($t); ?>
                     <div class="template-card__overlay">
                         <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--primary">Live Preview</a>
                         <a href="<?php echo BASE_PATH; ?>/select.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--orange">Use This Design</a>

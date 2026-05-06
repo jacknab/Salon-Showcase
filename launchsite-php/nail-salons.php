@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Nail Salon Templates';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/template-preview.php';
 
 $templates = [
     [
@@ -10,7 +11,10 @@ $templates = [
         'desc'     => 'High-shine, chrome-inspired aesthetic. A bold layout with a portfolio-first approach — perfect for nail artists who lead with their work.',
         'badge'    => 'popular',
         'features' => ['Portfolio', 'Booking', 'Services'],
-        'color'    => '#1a1a2a',
+        'accent'   => '#b0bec5',
+        'dark'     => '#0f0f1a',
+        'light'    => '#1a1a2a',
+        'url_slug' => 'chrome-nails',
     ],
     [
         'id'       => 'petal-studio',
@@ -19,7 +23,10 @@ $templates = [
         'desc'     => 'Soft blush tones, floral accents, and a warm, inviting design. Ideal for nail salons that want to project elegance and femininity.',
         'badge'    => 'premium',
         'features' => ['Gallery', 'Menu', 'Online Booking'],
-        'color'    => '#1a0f14',
+        'accent'   => '#e8a0b4',
+        'dark'     => '#1a0a10',
+        'light'    => '#2a1020',
+        'url_slug' => 'petal-studio',
     ],
     [
         'id'       => 'nail-bar-nyc',
@@ -28,7 +35,10 @@ $templates = [
         'desc'     => 'City-chic, fast-paced design made for busy urban nail bars. Clean service menus, quick booking, and a professional punch.',
         'badge'    => '',
         'features' => ['Services', 'Booking', 'Reviews'],
-        'color'    => '#0f0f1f',
+        'accent'   => '#3d7cd1',
+        'dark'     => '#0a0a1a',
+        'light'    => '#141424',
+        'url_slug' => 'nail-bar-nyc',
     ],
     [
         'id'       => 'luxe-nails',
@@ -37,7 +47,10 @@ $templates = [
         'desc'     => 'Opulent, dark-background luxury design for high-end nail studios. Gold accents, editorial photography, and a sense of exclusivity.',
         'badge'    => 'premium',
         'features' => ['Portfolio', 'VIP Booking', 'Gallery'],
-        'color'    => '#12080a',
+        'accent'   => '#d4a853',
+        'dark'     => '#120a08',
+        'light'    => '#1e1008',
+        'url_slug' => 'luxe-nails',
     ],
     [
         'id'       => 'pastel-pop',
@@ -46,7 +59,10 @@ $templates = [
         'desc'     => 'Fun, bold, and full of personality. Pastel gradients and playful typography for nail artists with a vibrant, expressive brand.',
         'badge'    => 'new',
         'features' => ['Gallery', 'Booking', 'Services'],
-        'color'    => '#0f0a1a',
+        'accent'   => '#b39ddb',
+        'dark'     => '#0f0a18',
+        'light'    => '#1a1228',
+        'url_slug' => 'pastel-pop',
     ],
     [
         'id'       => 'zen-nails',
@@ -55,7 +71,10 @@ $templates = [
         'desc'     => 'Clean, minimal aesthetic with generous white space and quiet sophistication. For studios where the work speaks for itself.',
         'badge'    => 'new',
         'features' => ['Portfolio', 'Services', 'Map'],
-        'color'    => '#0a0f0f',
+        'accent'   => '#80cbc4',
+        'dark'     => '#080e0e',
+        'light'    => '#0f1818',
+        'url_slug' => 'zen-nails',
     ],
 ];
 
@@ -94,16 +113,13 @@ require_once __DIR__ . '/includes/header.php';
         <div class="template-grid">
             <?php foreach ($templates as $index => $t): ?>
             <div class="template-card" data-category="nail-salon" style="transition-delay: <?php echo $index * 60; ?>ms;">
-                <div class="template-card__thumb" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($t['color']); ?>, #0b0d1a);">
+                <div class="template-card__thumb">
                     <?php if (!empty($t['badge'])): ?>
                     <span class="template-card__badge badge--<?php echo htmlspecialchars($t['badge']); ?>">
                         <?php echo ucfirst($t['badge']); ?>
                     </span>
                     <?php endif; ?>
-                    <div class="template-card__thumb-placeholder">
-                        <div class="thumb-icon">💅</div>
-                        <span><?php echo htmlspecialchars($t['name']); ?></span>
-                    </div>
+                    <?php render_template_preview($t); ?>
                     <div class="template-card__overlay">
                         <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--primary">Live Preview</a>
                         <a href="<?php echo BASE_PATH; ?>/select.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--orange">Use This Design</a>
