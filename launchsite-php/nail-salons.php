@@ -120,26 +120,13 @@ require_once __DIR__ . '/includes/header.php';
                     </span>
                     <?php endif; ?>
                     <?php render_template_preview($t); ?>
-                    <div class="template-card__overlay">
-                        <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--primary">Live Preview</a>
-                        <a href="<?php echo BASE_PATH; ?>/select.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--orange">Use This Design</a>
-                    </div>
                     <div class="preview-progress"></div>
                 </div>
                 <div class="template-card__body">
-                    <div class="template-card__meta">
-                        <span class="template-card__category">Nail Salon</span>
-                        <span class="template-card__style"><?php echo htmlspecialchars($t['style']); ?></span>
-                    </div>
                     <h3 class="template-card__title"><?php echo htmlspecialchars($t['name']); ?></h3>
-                    <p class="template-card__desc"><?php echo htmlspecialchars($t['desc']); ?></p>
-                    <div class="template-card__footer">
-                        <div class="template-card__features">
-                            <?php foreach ($t['features'] as $feature): ?>
-                            <span class="feature-pill"><?php echo htmlspecialchars($feature); ?></span>
-                            <?php endforeach; ?>
-                        </div>
-                        <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($t['id']); ?>" class="template-card__cta">Preview</a>
+                    <div class="template-card__actions">
+                        <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($t['id']); ?>" class="tc-btn tc-btn--preview">Preview</a>
+                        <a href="<?php echo BASE_PATH; ?>/select.php?id=<?php echo urlencode($t['id']); ?>" class="tc-btn tc-btn--start">Start</a>
                     </div>
                 </div>
             </div>
