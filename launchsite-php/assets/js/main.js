@@ -21,11 +21,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         card.addEventListener('mouseenter', function () {
             scroll.classList.add('is-scrolling');
+            card.classList.add('is-previewing');
         });
 
         card.addEventListener('mouseleave', function () {
             scroll.classList.remove('is-scrolling');
-            /* Force reflow so the snap-back transition fires immediately */
+            card.classList.remove('is-previewing');
+            /* Force reflow so snap-back and progress reset fire immediately */
             void scroll.offsetHeight;
         });
     });

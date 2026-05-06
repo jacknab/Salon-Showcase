@@ -124,6 +124,7 @@ require_once __DIR__ . '/includes/header.php';
                         <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--primary">Live Preview</a>
                         <a href="<?php echo BASE_PATH; ?>/select.php?id=<?php echo urlencode($t['id']); ?>" class="btn btn--orange">Use This Design</a>
                     </div>
+                    <div class="preview-progress"></div>
                 </div>
                 <div class="template-card__body">
                     <div class="template-card__meta">
