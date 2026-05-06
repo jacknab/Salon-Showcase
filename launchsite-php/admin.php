@@ -118,7 +118,10 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
     <div class="admin-card">
         <div class="admin-card__header">
             <span class="admin-card__title">All Templates</span>
-            <a href="#upload" class="btn-admin btn-admin--orange btn-admin--sm">+ Upload New Template</a>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn-admin btn-admin--ghost btn-admin--sm" onclick="openMediaLibModal()">🖼️ Image Library</button>
+                <a href="#upload" class="btn-admin btn-admin--orange btn-admin--sm">+ Upload New Template</a>
+            </div>
         </div>
         <div class="admin-card__body" style="padding:0;">
             <table class="admin-table">
@@ -272,6 +275,19 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                         <button type="button" class="btn-admin btn-admin--ghost" onclick="closeDeleteModal()">Cancel</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Library Modal -->
+    <div id="mediaLibModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box modal-box--media">
+            <div class="modal-header">
+                <div class="modal-title">🖼️ Image Library</div>
+                <button class="modal-close" onclick="closeMediaLibModal()">✕</button>
+            </div>
+            <div class="modal-body modal-body--media" id="mediaLibContent">
+                <div class="media-lib-loading">Loading…</div>
             </div>
         </div>
     </div>
@@ -883,8 +899,134 @@ document.addEventListener('keydown', e => {
         closeUploadThumbModal();
         closeDuplicateModal();
         closeEditModal();
+        closeMediaLibModal();
     }
 });
+
+// ── Image Library Modal ───────────────────────────────────────────────────────
+let _mediaLibLoaded = false;
+
+function openMediaLibModal() {
+    document.getElementById('mediaLibModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (!_mediaLibLoaded) loadMediaLib();
+}
+function closeMediaLibModal() {
+    document.getElementById('mediaLibModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.getElementById('mediaLibModal').addEventListener('click', function(e) {
+    if (e.target === this) closeMediaLibModal();
+});
+
+async function loadMediaLib(force = false) {
+    const container = document.getElementById('mediaLibContent');
+    container.innerHTML = '<div class="media-lib-loading">Loading…</div>';
+    try {
+        const res = await fetch('<?php echo BASE_PATH; ?>/admin-media-library.php', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        container.innerHTML = await res.text();
+        _mediaLibLoaded = !force;
+        initMediaLib(container);
+    } catch (err) {
+        container.innerHTML = '<p style="color:rgba(255,255,255,0.4);padding:30px;text-align:center;">Could not load library — ' + err.message + '</p>';
+    }
+}
+
+function initMediaLib(root) {
+    // Tab switching
+    root.querySelectorAll('.media-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            root.querySelectorAll('.media-tab').forEach(t => t.classList.remove('media-tab--active'));
+            root.querySelectorAll('.media-panel').forEach(p => p.classList.remove('media-panel--active'));
+            tab.classList.add('media-tab--active');
+            const panel = root.querySelector('#mpanel-' + tab.dataset.slug);
+            if (panel) panel.classList.add('media-panel--active');
+        });
+    });
+
+    // Upload
+    root.querySelectorAll('.media-upload-input').forEach(input => {
+        input.addEventListener('change', async () => {
+            if (!input.files[0]) return;
+            const slug   = input.dataset.slug;
+            const status = root.querySelector('#mupload-status-' + slug);
+            status.textContent = 'Uploading…';
+            status.style.color = 'rgba(255,255,255,0.5)';
+            const fd = new FormData();
+            fd.append('slug', slug);
+            fd.append('image', input.files[0]);
+            try {
+                const res  = await fetch('<?php echo BASE_PATH; ?>/admin-media-upload.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.ok) {
+                    status.textContent = '✓ Uploaded';
+                    status.style.color = '#4ade80';
+                    const name = data.file.replace(/\.[^.]+$/, '');
+                    let grid   = root.querySelector('#mgrid-' + slug);
+                    if (!grid) {
+                        // Was empty — reload the whole panel
+                        loadMediaLib(true);
+                        return;
+                    }
+                    const card = document.createElement('div');
+                    card.className = 'media-card';
+                    card.dataset.file = data.file;
+                    card.dataset.slug = slug;
+                    card.innerHTML = `<div class="media-card__img" style="background-image:url('${data.url}')"></div>
+                        <div class="media-card__footer">
+                            <span class="media-card__name">${name}</span>
+                            <button class="media-card__del btn-media-del"
+                                    data-file="${data.file}" data-slug="${slug}" title="Delete image">✕</button>
+                        </div>`;
+                    grid.appendChild(card);
+                    attachMediaDelHandler(card.querySelector('.btn-media-del'), root);
+                    setTimeout(() => { if (status.textContent === '✓ Uploaded') status.textContent = ''; }, 3000);
+                } else {
+                    status.textContent = '✗ ' + (data.error || 'Upload failed');
+                    status.style.color = '#f87171';
+                }
+            } catch (err) {
+                status.textContent = '✗ Network error';
+                status.style.color = '#f87171';
+            }
+            input.value = '';
+        });
+    });
+
+    // Delete handlers
+    root.querySelectorAll('.btn-media-del').forEach(btn => attachMediaDelHandler(btn, root));
+}
+
+function attachMediaDelHandler(btn, root) {
+    btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!confirm('Delete this image from the library? This cannot be undone.')) return;
+        const file = btn.dataset.file;
+        const slug = btn.dataset.slug;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('slug', slug);
+        try {
+            const res  = await fetch('<?php echo BASE_PATH; ?>/admin-media-delete.php', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.ok) {
+                btn.closest('.media-card').remove();
+                // Update tab count
+                const panel = root.querySelector('#mpanel-' + slug);
+                const tab   = root.querySelector(`.media-tab[data-slug="${slug}"] .media-tab__count`);
+                if (tab) {
+                    const remaining = panel ? panel.querySelectorAll('.media-card').length : 0;
+                    tab.textContent = remaining;
+                }
+            } else {
+                alert('Delete failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Network error — please try again.');
+        }
+    });
+}
 
 // ── Inline name edit ──────────────────────────────────────────────────────────
 function cancelInlineEdit(cell) {

@@ -369,6 +369,21 @@ if (function_exists('imagecreatetruecolor')) {
     }
 }
 
+// ── Save / refresh hero image in media library ────────────────────────────────
+
+require_once __DIR__ . '/admin-lib.php';
+$media_dir = launchit_media_dir($category);
+if (!is_dir($media_dir)) @mkdir($media_dir, 0755, true);
+$hero_url = launchit_extract_hero_url($source_dir);
+if ($hero_url) {
+    preg_match('/\.(png|webp)(?:[?&]|$)/i', $hero_url, $em);
+    $img_ext    = isset($em[1]) ? strtolower($em[1]) : 'jpg';
+    $media_dest = $media_dir . '/' . $template_id . '.' . $img_ext;
+    if (!file_exists($media_dest)) {
+        launchit_download_hero($hero_url, $media_dest);
+    }
+}
+
 // ── Flash and redirect ────────────────────────────────────────────────────────
 
 $_SESSION['flash'] = [

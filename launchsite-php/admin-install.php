@@ -782,6 +782,27 @@ if ($thumb_ok) {
     step('⚠️', "Thumbnail skipped (GD library unavailable) — add a JPEG manually to <code>assets/img/thumbs/$tid.jpg</code>");
 }
 
+// ── 9. Save hero image to media library ───────────────────────────────────────
+step('📸', 'Saving hero image to media library…');
+
+require_once __DIR__ . '/admin-lib.php';
+$media_dir = launchit_media_dir($category);
+if (!is_dir($media_dir)) @mkdir($media_dir, 0755, true);
+
+$hero_url    = launchit_extract_hero_url($dest_dir);
+$media_saved = false;
+if ($hero_url) {
+    preg_match('/\.(png|webp)(?:[?&]|$)/i', $hero_url, $em);
+    $img_ext     = isset($em[1]) ? strtolower($em[1]) : 'jpg';
+    $media_saved = launchit_download_hero($hero_url, $media_dir . '/' . $tid . '.' . $img_ext);
+}
+
+if ($media_saved) {
+    step('✅', 'Hero image saved to <code>media/' . launchit_category_slug($category) . '/hero_images/</code>');
+} else {
+    step('⚠️', 'Hero image not downloaded — upload manually via the Image Library or use Re-sync later.');
+}
+
 $preview_url = BASE_PATH . '/preview.php?id=' . urlencode($tid);
 $cat_slug    = ['Hair Salon'=>'hair-salons.php','Barbershop'=>'barbershops.php','Nail Salon'=>'nail-salons.php'][$category] ?? '';
 $cat_url     = BASE_PATH . '/' . $cat_slug;
