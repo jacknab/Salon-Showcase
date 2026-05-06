@@ -185,6 +185,35 @@ body.admin-body {
 .tbl-hours { white-space: nowrap; }
 .hours-compact { font-size: 0.72rem; color: rgba(255,255,255,0.42); line-height: 1.65; }
 
+/* ── Inline name edit ── */
+.tbl-name { min-width: 160px; }
+.tpl-name-text { font-weight: 600; color: white; }
+.tpl-name-edit-btn {
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.22); font-size: 0.82rem;
+    padding: 0 0 0 6px; vertical-align: middle;
+    opacity: 0; transition: opacity 0.15s;
+}
+.tbl-name:hover .tpl-name-edit-btn { opacity: 1; }
+.tpl-name-editing { display: inline-flex; align-items: center; gap: 5px; }
+.tpl-name-input {
+    font-size: 0.875rem; font-weight: 600; color: white;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(124,58,237,0.5);
+    border-radius: 6px; padding: 3px 9px;
+    width: 200px; outline: none;
+}
+.tpl-name-input:focus { border-color: #a855f7; box-shadow: 0 0 0 2px rgba(168,85,247,0.18); }
+.tpl-name-save, .tpl-name-cancel {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.95rem; padding: 2px 5px; border-radius: 4px;
+    transition: background 0.15s; line-height: 1;
+}
+.tpl-name-save { color: #4ade80; }
+.tpl-name-save:hover { background: rgba(74,222,128,0.12); }
+.tpl-name-cancel { color: rgba(255,255,255,0.3); }
+.tpl-name-cancel:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
+
 /* ── Upload / form ── */
 .upload-drop {
     border: 2px dashed rgba(124,58,237,0.35);

@@ -139,7 +139,15 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                         $type     = $t['type'] ?? 'php';
                     ?>
                     <tr>
-                        <td style="font-weight:600;color:white;"><?php echo htmlspecialchars($t['name']); ?></td>
+                        <td class="tbl-name" data-id="<?php echo htmlspecialchars($id); ?>">
+                            <span class="tpl-name-text"><?php echo htmlspecialchars($t['name']); ?></span><button class="tpl-name-edit-btn" title="Rename">✎</button>
+                            <span class="tpl-name-editing" style="display:none;">
+                                <input type="text" class="tpl-name-input"
+                                       value="<?php echo htmlspecialchars($t['name']); ?>">
+                                <button class="tpl-name-save" title="Save">✓</button>
+                                <button class="tpl-name-cancel" title="Cancel">✕</button>
+                            </span>
+                        </td>
                         <td class="tbl-id"><?php echo htmlspecialchars($id); ?></td>
                         <td class="tbl-cat"><?php echo htmlspecialchars($t['category']); ?></td>
                         <td>
@@ -876,6 +884,75 @@ document.addEventListener('keydown', e => {
         closeDuplicateModal();
         closeEditModal();
     }
+});
+
+// ── Inline name edit ──────────────────────────────────────────────────────────
+function cancelInlineEdit(cell) {
+    cell.querySelector('.tpl-name-text').style.display = '';
+    cell.querySelector('.tpl-name-edit-btn').style.display = '';
+    cell.querySelector('.tpl-name-editing').style.display = 'none';
+}
+
+document.querySelectorAll('.tpl-name-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const cell = btn.closest('.tbl-name');
+        cell.querySelector('.tpl-name-text').style.display = 'none';
+        btn.style.display = 'none';
+        const editing = cell.querySelector('.tpl-name-editing');
+        editing.style.display = 'inline-flex';
+        editing.querySelector('.tpl-name-input').select();
+    });
+});
+
+document.querySelectorAll('.tpl-name-cancel').forEach(btn => {
+    btn.addEventListener('click', () => cancelInlineEdit(btn.closest('.tbl-name')));
+});
+
+document.querySelectorAll('.tpl-name-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const cell    = btn.closest('.tbl-name');
+        const id      = cell.dataset.id;
+        const input   = cell.querySelector('.tpl-name-input');
+        const newName = input.value.trim();
+        if (!newName) { input.focus(); return; }
+
+        const origText = btn.textContent;
+        btn.textContent = '…';
+        btn.disabled    = true;
+
+        try {
+            const fd = new FormData();
+            fd.append('template_id', id);
+            fd.append('name', newName);
+            const res  = await fetch('<?php echo BASE_PATH; ?>/admin-rename.php', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.ok) {
+                cell.querySelector('.tpl-name-text').textContent = newName;
+                if (_tplData[id]) _tplData[id].name = newName;
+                cancelInlineEdit(cell);
+            } else {
+                alert('Error: ' + (data.error || 'Could not rename.'));
+                btn.textContent = origText;
+                btn.disabled    = false;
+            }
+        } catch (err) {
+            alert('Network error — please try again.');
+            btn.textContent = origText;
+            btn.disabled    = false;
+        }
+    });
+});
+
+document.querySelectorAll('.tpl-name-input').forEach(input => {
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            input.closest('.tbl-name').querySelector('.tpl-name-save').click();
+        }
+        if (e.key === 'Escape') {
+            cancelInlineEdit(input.closest('.tbl-name'));
+        }
+    });
 });
 </script>
 <?php endif; ?>
