@@ -138,14 +138,55 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                             <span class="thumb-dot thumb-dot--<?php echo $thumb_ok ? 'ok' : 'missing'; ?>"></span>
                             <?php echo $thumb_ok ? 'OK' : 'Missing'; ?>
                         </td>
-                        <td>
+                        <td class="tbl-actions">
                             <a href="<?php echo BASE_PATH; ?>/preview.php?id=<?php echo urlencode($id); ?>"
                                target="_blank" class="tbl-link">Preview ↗</a>
+                            <?php if ($type === 'react'): ?>
+                            <button class="tbl-link tbl-link--replace btn-replace"
+                                    data-id="<?php echo htmlspecialchars($id); ?>"
+                                    data-name="<?php echo htmlspecialchars($t['name']); ?>">
+                                Replace
+                            </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Replace Modal -->
+    <div id="replaceModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">Replace Template</div>
+                <button class="modal-close" onclick="closeReplaceModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-template-info" id="modalTemplateName"></div>
+                <p class="modal-desc">
+                    Upload a new ZIP to rebuild this template. The category stays the same.
+                    Name, colors, and hero text are re-detected from your new source files.
+                </p>
+                <form id="replaceForm" method="POST" action="<?php echo BASE_PATH; ?>/admin-replace.php"
+                      enctype="multipart/form-data" onsubmit="return confirmReplace()">
+                    <input type="hidden" name="template_id" id="replaceTemplateId">
+                    <div class="upload-drop upload-drop--compact" id="replaceDropZone"
+                         onclick="document.getElementById('replaceZip').click()">
+                        <div class="upload-drop__icon" style="font-size:1.8rem;margin-bottom:6px;">📦</div>
+                        <div class="upload-drop__title" id="replaceDropTitle">Drop new ZIP here, or click to browse</div>
+                        <div class="upload-drop__sub">React/Vite project ZIP · up to 50 MB</div>
+                        <input type="file" name="zipfile" id="replaceZip" accept=".zip" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-admin btn-admin--orange" id="replaceBtn">
+                            🔄 Replace &amp; Rebuild
+                        </button>
+                        <button type="button" class="btn-admin btn-admin--ghost" onclick="closeReplaceModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -201,8 +242,9 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
 </div>
 
 <script>
-const dropZone       = document.getElementById('dropZone');
-const zipFile        = document.getElementById('zipFile');
+// ── New template upload ──────────────────────────────────────────────────────
+const dropZone        = document.getElementById('dropZone');
+const zipFile         = document.getElementById('zipFile');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
 
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
@@ -221,13 +263,11 @@ dropZone.addEventListener('drop', e => {
 zipFile.addEventListener('change', () => {
     if (zipFile.files[0]) onFileSelected(zipFile.files[0]);
 });
-
 function onFileSelected(file) {
     fileNameDisplay.textContent = '📦 ' + file.name;
     fileNameDisplay.style.display = 'block';
     dropZone.querySelector('.upload-drop__title').textContent = 'File selected — ready to install';
 }
-
 function confirmInstall() {
     if (!document.getElementById('fCategory').value) {
         alert('Please select a category.');
@@ -238,6 +278,70 @@ function confirmInstall() {
     btn.disabled = true;
     return true;
 }
+
+// ── Replace modal ────────────────────────────────────────────────────────────
+document.querySelectorAll('.btn-replace').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id   = btn.dataset.id;
+        const name = btn.dataset.name;
+        document.getElementById('replaceTemplateId').value = id;
+        document.getElementById('modalTemplateName').textContent = name + '  (' + id + ')';
+        document.getElementById('replaceDropTitle').textContent  = 'Drop new ZIP here, or click to browse';
+        document.getElementById('replaceBtn').innerHTML = '🔄 Replace & Rebuild';
+        document.getElementById('replaceBtn').disabled  = false;
+        // Reset file input
+        document.getElementById('replaceZip').value = '';
+        document.getElementById('replaceModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    });
+});
+
+function closeReplaceModal() {
+    document.getElementById('replaceModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+document.getElementById('replaceModal').addEventListener('click', function(e) {
+    if (e.target === this) closeReplaceModal();
+});
+
+// Replace drop zone
+const replaceDropZone = document.getElementById('replaceDropZone');
+const replaceZip      = document.getElementById('replaceZip');
+
+replaceDropZone.addEventListener('dragover', e => { e.preventDefault(); replaceDropZone.classList.add('drag-over'); });
+replaceDropZone.addEventListener('dragleave', () => replaceDropZone.classList.remove('drag-over'));
+replaceDropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    replaceDropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.zip')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        replaceZip.files = dt.files;
+        onReplaceFileSelected(file.name);
+    }
+});
+replaceZip.addEventListener('change', () => {
+    if (replaceZip.files[0]) onReplaceFileSelected(replaceZip.files[0].name);
+});
+function onReplaceFileSelected(name) {
+    document.getElementById('replaceDropTitle').textContent = '📦 ' + name + ' — ready';
+}
+
+function confirmReplace() {
+    if (!replaceZip.files[0]) { alert('Please select a ZIP file.'); return false; }
+    const btn = document.getElementById('replaceBtn');
+    btn.innerHTML = '<span class="spinner"></span> Rebuilding… (this takes ~60 s)';
+    btn.disabled  = true;
+    return true;
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeReplaceModal();
+});
 </script>
 <?php endif; ?>
 </body>
