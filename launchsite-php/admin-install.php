@@ -166,15 +166,38 @@ function detect_metadata(string $dir, string $zip_filename, string $category): a
 
     // Business name & hero text from main component
     $app_src = read_main_component($dir);
-    $business_name = $name;
-    $hero_tagline  = '';
-    $hero_sub      = '';
+    $business_name      = $name;
+    $business_from_src  = false;
+    $hero_tagline       = '';
+    $hero_sub           = '';
 
     if ($app_src) {
         // Business name: <strong ...>Business Name</strong>
         if (preg_match('/<strong[^>]*>\s*([A-Z][^<]{3,55})\s*<\/strong>/u', $app_src, $m)) {
             $candidate = trim(strip_tags($m[1]));
-            if (strlen($candidate) > 3 && strlen($candidate) < 60) $business_name = $candidate;
+            if (strlen($candidate) > 3 && strlen($candidate) < 60) {
+                $business_name     = $candidate;
+                $business_from_src = true;
+            }
+        }
+        // Also try the site logo / brand text patterns
+        if (!$business_from_src) {
+            $logo_patterns = [
+                '/class=["\'][^"\']*(?:logo|brand|site-name)[^"\']*["\'][^>]*>\s*<[^>]+>\s*([A-Z][^<]{3,55})\s*<\/[^>]+>/isu',
+                '/class=["\'][^"\']*(?:logo|brand|site-name)[^"\']*["\'][^>]*>\s*([A-Z][^<]{3,55})\s*</isu',
+                '/<(?:h1|h2)[^>]*class=["\'][^"\']*(?:logo|brand|title)[^"\']*["\'][^>]*>(.*?)<\/(?:h1|h2)>/isu',
+            ];
+            foreach ($logo_patterns as $pat) {
+                if (preg_match($pat, $app_src, $m)) {
+                    $candidate = trim(strip_tags($m[1]));
+                    $candidate = preg_replace('/\s+/', ' ', $candidate);
+                    if (strlen($candidate) > 3 && strlen($candidate) < 60) {
+                        $business_name     = $candidate;
+                        $business_from_src = true;
+                        break;
+                    }
+                }
+            }
         }
         // Hero h1 text
         if (preg_match('/id=["\']hero["\'][^>]*>.*?<h1[^>]*>(.*?)<\/h1>/is', $app_src, $m)) {
@@ -195,6 +218,9 @@ function detect_metadata(string $dir, string $zip_filename, string $category): a
         }
     }
     if (!$hero_tagline) $hero_tagline = $business_name . '.';
+
+    // If we found the real business name from source, use it as the display name too
+    if ($business_from_src) $name = $business_name;
 
     $accent = detect_accent_color($dir, $app_src, $category);
     $dark   = detect_dark_color($dir, $app_src);
@@ -222,6 +248,133 @@ function detect_metadata(string $dir, string $zip_filename, string $category): a
 }
 
 // ── Thumbnail generator ───────────────────────────────────────────────────────
+
+/**
+ * Find the largest image file in the built template's assets directory.
+ * This is almost always the hero background photo.
+ */
+function find_hero_image(string $built_dir): string {
+    $best = ''; $best_size = 0;
+    $assets_dir = $built_dir . '/assets';
+    if (!is_dir($assets_dir)) return '';
+    $iter = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($assets_dir, FilesystemIterator::SKIP_DOTS));
+    foreach ($iter as $file) {
+        if (!$file->isFile()) continue;
+        $ext = strtolower($file->getExtension());
+        if (!in_array($ext, ['jpg','jpeg','png','webp'])) continue;
+        $sz = $file->getSize();
+        if ($sz > $best_size) { $best_size = $sz; $best = $file->getPathname(); }
+    }
+    return $best;
+}
+
+/**
+ * Generate a thumbnail using the actual hero photo from the built template.
+ * Scales/crops the photo to 900×620, darkens it, then overlays a fake browser
+ * chrome (nav bar), the business name, tagline, and CTA buttons — so it looks
+ * like a real screenshot of the site's hero section.
+ */
+function generate_thumbnail_from_photo(
+    string $photo_path, string $id, string $name, string $accent,
+    string $tagline, string $hero_sub, string $out_dir
+): bool {
+    $ext = strtolower(pathinfo($photo_path, PATHINFO_EXTENSION));
+    $src = match($ext) {
+        'jpg','jpeg' => @imagecreatefromjpeg($photo_path),
+        'png'        => @imagecreatefrompng($photo_path),
+        'webp'       => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($photo_path) : false,
+        default      => false,
+    };
+    if (!$src) return false;
+
+    $fb = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+    $fr = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+    if (!file_exists($fb)) { imagedestroy($src); return false; }
+
+    $W = 900; $H = 620;
+    $img = imagecreatetruecolor($W, $H);
+
+    // Scale & centre-crop source photo to fill 900×620
+    $sw = imagesx($src); $sh = imagesy($src);
+    $scale = max($W / $sw, $H / $sh);
+    $nw = (int)($sw * $scale); $nh = (int)($sh * $scale);
+    $ox = (int)(($nw - $W) / 2); $oy = (int)(($nh - $H) / 2);
+    $tmp = imagecreatetruecolor($nw, $nh);
+    imagecopyresampled($tmp, $src, 0, 0, 0, 0, $nw, $nh, $sw, $sh);
+    imagecopy($img, $tmp, 0, 0, $ox, $oy, $W, $H);
+    imagedestroy($tmp); imagedestroy($src);
+
+    // Dark gradient overlay (heavier at top & bottom for legibility)
+    for ($y = 0; $y < $H; $y++) {
+        $t   = $y / $H;
+        $a   = (int)(55 + $t * 45); // 55→100 alpha (0=opaque, 127=transparent in GD)
+        imagefilledrectangle($img, 0, $y, $W, $y, imagecolorallocatealpha($img, 0, 0, 0, $a));
+    }
+    // Extra darkening strip behind the nav bar
+    imagefilledrectangle($img, 0, 0, $W, 58, imagecolorallocatealpha($img, 0, 0, 0, 40));
+
+    [$ar,$ag,$ab] = hex2rgb_local($accent);
+    $acc_c  = imagecolorallocate($img, $ar, $ag, $ab);
+    $white  = imagecolorallocate($img, 255, 255, 255);
+    $white2 = imagecolorallocatealpha($img, 255, 255, 255, 40);
+
+    // ── Fake nav bar ──────────────────────────────────────────────────────────
+    // Logo circle + brand name
+    imagefilledellipse($img, 30, 29, 28, 28, $acc_c);
+    imagettftext($img, 10, 0, 48, 34, $white, $fb, $name);
+    // Nav links (placeholder dots/lines)
+    foreach ([340, 400, 460, 520] as $nx) {
+        $box = imagettfbbox(9, 0, $fr, ['About','Gallery','Services','Contact'][array_search($nx,[340,400,460,520])]);
+        imagettftext($img, 9, 0, $nx, 33, $white2, $fr, ['About','Gallery','Services','Contact'][array_search($nx,[340,400,460,520])]);
+    }
+    // CTA button
+    rrect($img, $W-128, 14, $W-20, 44, 15, $acc_c);
+    imagettftext($img, 9, 0, $W-115, 33, $white, $fb, 'Book Now');
+
+    // ── Hero text block (centred) ─────────────────────────────────────────────
+    $cy = 185;
+    // "WELCOME TO" label
+    $wc = imagecolorallocatealpha($img, $ar, $ag, $ab, 20);
+    $box = imagettfbbox(9, 0, $fb, 'WELCOME TO');
+    imagettftext($img, 9, 0, (int)(($W - abs($box[2]-$box[0])) / 2), $cy, $wc, $fb, 'WELCOME TO');
+    $cy += 22;
+
+    // Large title — word-wrap at ~700px
+    $words = explode(' ', $tagline ?: $name);
+    $lines = []; $line = '';
+    foreach ($words as $w) {
+        $test = $line ? "$line $w" : $w;
+        $box  = imagettfbbox(40, 0, $fb, $test);
+        if (abs($box[2]-$box[0]) > 700 && $line) { $lines[] = $line; $line = $w; } else $line = $test;
+    }
+    if ($line) $lines[] = $line;
+    foreach (array_slice($lines, 0, 3) as $l) {
+        $box = imagettfbbox(40, 0, $fb, $l);
+        imagettftext($img, 40, 0, (int)(($W - abs($box[2]-$box[0])) / 2), $cy + 44, $white, $fb, $l);
+        $cy += 52;
+    }
+    $cy += 20;
+
+    // Sub-text
+    $sub = $hero_sub ?: 'Where beauty meets relaxation. Experience premium services in an elegant environment.';
+    if (strlen($sub) > 90) $sub = substr($sub, 0, 87) . '…';
+    $sc  = imagecolorallocatealpha($img, 220, 220, 220, 20);
+    $box = imagettfbbox(10, 0, $fr, $sub);
+    imagettftext($img, 10, 0, (int)(($W - abs($box[2]-$box[0])) / 2), $cy + 10, $sc, $fr, $sub);
+    $cy += 30;
+
+    // CTA buttons
+    $bw  = 155; $gap = 16;
+    $bx  = (int)(($W - $bw * 2 - $gap) / 2);
+    rrect($img, $bx, $cy + 10, $bx + $bw, $cy + 48, 20, $acc_c);
+    imagettftext($img, 10, 0, $bx + 20, $cy + 34, $white, $fb, 'Explore Services');
+    rrect($img, $bx + $bw + $gap, $cy + 10, $bx + $bw * 2 + $gap, $cy + 48, 20, imagecolorallocatealpha($img, 255, 255, 255, 70));
+    imagettftext($img, 10, 0, $bx + $bw + $gap + 20, $cy + 34, $white, $fb, 'Get Directions');
+
+    $ok = imagejpeg($img, $out_dir . '/' . $id . '.jpg', 90);
+    imagedestroy($img);
+    return (bool)$ok;
+}
 
 function hex2rgb_local(string $hex): array {
     $hex = ltrim($hex, '#');
@@ -593,9 +746,23 @@ step('✅', "Registered — will appear immediately in the <strong>" . htmlspeci
 
 // ── 8. Thumbnail ──────────────────────────────────────────────────────────────
 step('🖼️', 'Generating catalog thumbnail…');
-$thumb_ok = generate_thumbnail($tid, $meta['name'], $meta['accent'], $meta['dark'], $meta['light'], $meta['hero_tagline'], $thumbs_dir);
+
+$hero_photo = find_hero_image($built_dir);
+if ($hero_photo) {
+    $thumb_ok = generate_thumbnail_from_photo(
+        $hero_photo, $tid, $meta['business_name'], $meta['accent'],
+        $meta['hero_tagline'], $meta['hero_sub'], $thumbs_dir
+    );
+    if (!$thumb_ok) {
+        // Photo load failed (corrupt image etc.) — fall back to synthetic
+        $thumb_ok = generate_thumbnail($tid, $meta['name'], $meta['accent'], $meta['dark'], $meta['light'], $meta['hero_tagline'], $thumbs_dir);
+    }
+} else {
+    $thumb_ok = generate_thumbnail($tid, $meta['name'], $meta['accent'], $meta['dark'], $meta['light'], $meta['hero_tagline'], $thumbs_dir);
+}
+
 if ($thumb_ok) {
-    step('✅', 'Thumbnail generated');
+    step('✅', 'Thumbnail generated' . ($hero_photo ? ' (from template hero image)' : ''));
 } else {
     step('⚠️', "Thumbnail skipped (GD library unavailable) — add a JPEG manually to <code>assets/img/thumbs/$tid.jpg</code>");
 }
