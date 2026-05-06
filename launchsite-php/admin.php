@@ -26,6 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
 
 $is_authed = !empty($_SESSION['admin_logged_in']);
 
+// Flash messages from redirects
+$flash = $_SESSION['flash'] ?? null;
+unset($_SESSION['flash']);
+
 // Stats
 $hair_count  = count(array_filter($all_templates, fn($t) => $t['category'] === 'Hair Salon'));
 $barb_count  = count(array_filter($all_templates, fn($t) => $t['category'] === 'Barbershop'));
@@ -102,6 +106,14 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
         </div>
     </div>
 
+    <?php if ($flash): ?>
+    <div class="flash-msg flash-msg--<?php echo htmlspecialchars($flash['type']); ?>" id="flashMsg">
+        <span class="flash-msg__icon"><?php echo $flash['type'] === 'success' ? '✅' : '❌'; ?></span>
+        <span><?php echo htmlspecialchars($flash['msg']); ?></span>
+        <button class="flash-msg__close" onclick="this.parentElement.remove()">✕</button>
+    </div>
+    <?php endif; ?>
+
     <!-- Template List -->
     <div class="admin-card">
         <div class="admin-card__header">
@@ -148,6 +160,10 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                                 Replace
                             </button>
                             <?php endif; ?>
+                            <form method="POST" action="<?php echo BASE_PATH; ?>/admin-thumb.php" style="display:inline;">
+                                <input type="hidden" name="template_id" value="<?php echo htmlspecialchars($id); ?>">
+                                <button type="submit" class="tbl-link tbl-link--regen">Regen Thumb</button>
+                            </form>
                             <button class="tbl-link tbl-link--delete btn-delete"
                                     data-id="<?php echo htmlspecialchars($id); ?>"
                                     data-name="<?php echo htmlspecialchars($t['name']); ?>"
