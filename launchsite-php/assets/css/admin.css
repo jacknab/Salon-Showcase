@@ -443,6 +443,21 @@ body.admin-body {
 }
 .tbl-link--upload:hover { background: rgba(99,179,237,0.1); border-color: rgba(99,179,237,0.6); color: white; }
 
+.tbl-link--dupe {
+    background: none;
+    border: 1px solid rgba(167,139,250,0.3);
+    color: rgba(167,139,250,0.8);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    line-height: 1.5;
+}
+.tbl-link--dupe:hover { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.6); color: white; }
+
 /* ── Flash notification ── */
 .flash-msg {
     display: flex;

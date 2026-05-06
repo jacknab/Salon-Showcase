@@ -179,6 +179,13 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                                     data-name="<?php echo htmlspecialchars($t['name']); ?>">
                                 Upload Image
                             </button>
+                            <button class="tbl-link tbl-link--dupe btn-duplicate"
+                                    data-id="<?php echo htmlspecialchars($id); ?>"
+                                    data-name="<?php echo htmlspecialchars($t['name']); ?>"
+                                    data-type="<?php echo htmlspecialchars($type); ?>"
+                                    data-category="<?php echo htmlspecialchars($t['category']); ?>">
+                                Duplicate
+                            </button>
                             <button class="tbl-link tbl-link--delete btn-delete"
                                     data-id="<?php echo htmlspecialchars($id); ?>"
                                     data-name="<?php echo htmlspecialchars($t['name']); ?>"
@@ -241,6 +248,45 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                             🗑️ Delete Permanently
                         </button>
                         <button type="button" class="btn-admin btn-admin--ghost" onclick="closeDeleteModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate Template Modal -->
+    <div id="duplicateModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">Duplicate Template</div>
+                <button class="modal-close" onclick="closeDuplicateModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-template-info" id="dupeSourceName"></div>
+                <p class="modal-desc" id="dupeDesc"></p>
+                <form id="duplicateForm" method="POST"
+                      action="<?php echo BASE_PATH; ?>/admin-duplicate.php"
+                      onsubmit="return confirmDuplicate()">
+                    <input type="hidden" name="source_id"  id="dupeSourceId">
+                    <input type="hidden" name="source_type" id="dupeSourceType">
+                    <div class="form-group" style="margin-top:4px;">
+                        <label class="form-label">New template ID <span style="color:rgba(255,255,255,0.35);font-weight:400;">(letters, numbers, hyphens)</span></label>
+                        <input type="text" name="new_id" id="dupeNewId" class="form-input"
+                               placeholder="e.g. luxury-nails-v2"
+                               autocomplete="off" spellcheck="false" required>
+                        <span class="form-hint" id="dupeIdHint"></span>
+                    </div>
+                    <div class="form-group" style="margin-top:14px;">
+                        <label class="form-label">Display name <span style="color:rgba(255,255,255,0.35);font-weight:400;">(shown on catalog card)</span></label>
+                        <input type="text" name="new_name" id="dupeNewName" class="form-input"
+                               placeholder="e.g. Luxury Nails v2" autocomplete="off">
+                        <span class="form-hint">Leave blank to use "Copy of [original name]"</span>
+                    </div>
+                    <div class="modal-actions" style="margin-top:20px;">
+                        <button type="submit" class="btn-admin btn-admin--primary" id="dupeBtn">
+                            ⧉ Duplicate
+                        </button>
+                        <button type="button" class="btn-admin btn-admin--ghost" onclick="closeDuplicateModal()">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -580,12 +626,77 @@ function confirmUploadThumb() {
     return true;
 }
 
+// ── Duplicate modal ───────────────────────────────────────────────────────────
+const _existingIds = <?php echo json_encode(array_keys($all_templates)); ?>;
+
+document.querySelectorAll('.btn-duplicate').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id       = btn.dataset.id;
+        const name     = btn.dataset.name;
+        const type     = btn.dataset.type;
+        const category = btn.dataset.category;
+        document.getElementById('dupeSourceId').value   = id;
+        document.getElementById('dupeSourceType').value = type;
+        document.getElementById('dupeSourceName').textContent = name + '  (' + id + ')';
+        document.getElementById('dupeDesc').textContent = type === 'react'
+            ? 'Creates a new catalog entry and copies the built site files — ready to preview instantly. Source ZIP is not copied.'
+            : 'Creates a new catalog entry. PHP template files are shared; update the new entry\'s name, colors, and description as needed.';
+        document.getElementById('dupeNewId').value   = '';
+        document.getElementById('dupeNewName').value = '';
+        document.getElementById('dupeIdHint').textContent = '';
+        document.getElementById('dupeNewId').style.borderColor = '';
+        document.getElementById('dupeBtn').innerHTML = '⧉ Duplicate';
+        document.getElementById('dupeBtn').disabled  = false;
+        document.getElementById('duplicateModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('dupeNewId').focus(), 80);
+    });
+});
+
+document.getElementById('dupeNewId').addEventListener('input', function() {
+    const val      = this.value.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
+    this.value     = val;
+    const taken    = _existingIds.includes(val);
+    const empty    = val === '';
+    const hint     = document.getElementById('dupeIdHint');
+    if (empty) {
+        hint.textContent = '';
+        this.style.borderColor = '';
+    } else if (taken) {
+        hint.textContent = 'This ID is already in use — choose a different one.';
+        hint.style.color = 'rgba(248,113,113,0.8)';
+        this.style.borderColor = 'rgba(248,113,113,0.4)';
+    } else {
+        hint.textContent = '✓ Available';
+        hint.style.color = 'rgba(52,211,153,0.8)';
+        this.style.borderColor = 'rgba(52,211,153,0.4)';
+    }
+});
+
+function closeDuplicateModal() {
+    document.getElementById('duplicateModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.getElementById('duplicateModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDuplicateModal();
+});
+function confirmDuplicate() {
+    const newId = document.getElementById('dupeNewId').value.trim();
+    if (!newId) { alert('Please enter a new template ID.'); return false; }
+    if (_existingIds.includes(newId)) { alert('That ID is already in use.'); return false; }
+    const btn = document.getElementById('dupeBtn');
+    btn.innerHTML = '<span class="spinner"></span> Duplicating…';
+    btn.disabled  = true;
+    return true;
+}
+
 // Close modals on Escape key
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         closeReplaceModal();
         closeDeleteModal();
         closeUploadThumbModal();
+        closeDuplicateModal();
     }
 });
 </script>
