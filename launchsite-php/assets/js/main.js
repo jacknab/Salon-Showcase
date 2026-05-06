@@ -10,28 +10,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ── Scroll-preview hover effect ──────────────────────────────────────
-     * On mouseenter: slow downward pan (CSS handles the transition duration)
-     * On mouseleave: snap back to top instantly (remove active class)
-     * We drive the transition entirely via CSS classes so it's silky smooth.
-     * ------------------------------------------------------------------- */
-    document.querySelectorAll('.template-card').forEach(function (card) {
-        var scroll = card.querySelector('.preview-scroll');
-        if (!scroll) return;
-
-        card.addEventListener('mouseenter', function () {
-            scroll.classList.add('is-scrolling');
-            card.classList.add('is-previewing');
-        });
-
-        card.addEventListener('mouseleave', function () {
-            scroll.classList.remove('is-scrolling');
-            card.classList.remove('is-previewing');
-            /* Force reflow so snap-back and progress reset fire immediately */
-            void scroll.offsetHeight;
-        });
-    });
-
     /* ── Scroll-in entrance animations ── */
     var observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {

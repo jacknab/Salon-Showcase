@@ -1,7 +1,6 @@
 <?php
 $page_title = 'Hair Salon Templates';
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/template-preview.php';
 
 $templates = [
     [
@@ -119,8 +118,12 @@ require_once __DIR__ . '/includes/header.php';
                         <?php echo ucfirst($t['badge']); ?>
                     </span>
                     <?php endif; ?>
-                    <?php render_template_preview($t); ?>
-                    <div class="preview-progress"></div>
+                    <img
+                        src="<?php echo BASE_PATH; ?>/assets/img/thumbs/<?php echo urlencode($t['id']); ?>.jpg"
+                        alt="<?php echo htmlspecialchars($t['name']); ?> template preview"
+                        class="template-card__img"
+                        loading="lazy"
+                    >
                 </div>
                 <div class="template-card__body">
                     <h3 class="template-card__title"><?php echo htmlspecialchars($t['name']); ?></h3>
