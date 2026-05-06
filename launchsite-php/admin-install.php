@@ -358,7 +358,7 @@ $env_prefix = 'HOME=' . escapeshellarg(getenv('HOME') ?: '/home/runner')
 // ── Begin streaming output ────────────────────────────────────────────────────
 
 ob_implicit_flush(true);
-ob_end_flush();
+@ob_end_flush();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -461,7 +461,7 @@ step('📁', "Moving source to <code>artifacts/template-$tid/</code>…");
 
 if (is_dir($dest_dir)) run_cmd("rm -rf " . escapeshellarg($dest_dir));
 
-if (!rename($src, $dest_dir)) {
+if (!@rename($src, $dest_dir)) {
     $r = run_cmd("cp -r " . escapeshellarg($src) . " " . escapeshellarg($dest_dir));
     run_cmd("rm -rf " . escapeshellarg($tmp_extract));
     if ($r['code'] !== 0) abort('Could not move files to the artifacts directory. Check server permissions.');
@@ -500,9 +500,41 @@ file_put_contents($dest_dir . '/package.json', json_encode($pkg, JSON_PRETTY_PRI
 step('✅', "Configured: base <code>$base_path_url</code> → outDir <code>launchsite-php/templates/$tid/</code>");
 
 // ── 5. pnpm install ───────────────────────────────────────────────────────────
-step('📥', 'Installing dependencies from workspace root (<code>pnpm install</code>) — may take 30–90 s…');
 
-$r = run_cmd("$env_prefix " . escapeshellarg($pnpm) . " install --no-frozen-lockfile", $workspace_root);
+function run_cmd_progress(string $cmd, string $cwd = ''): array {
+    $full = $cwd ? "cd " . escapeshellarg($cwd) . " && $cmd 2>&1" : "$cmd 2>&1";
+    $desc = [['pipe','r'], ['pipe','w'], ['pipe','w']];
+    $proc = proc_open($full, $desc, $pipes);
+    if (!is_resource($proc)) return ['output' => '', 'code' => 1];
+    fclose($pipes[0]);
+    stream_set_blocking($pipes[1], false);
+    $out = '';
+    $last_tick = time();
+    $tick_count = 0;
+    echo "<li class='result-step'><span class='result-step__icon'>📥</span><span>"
+       . "Installing dependencies… <span id='pnpm-progress' style='color:rgba(255,255,255,0.4);font-family:monospace;'></span></span></li>\n";
+    @ob_flush(); flush();
+    while (!feof($pipes[1])) {
+        $chunk = fread($pipes[1], 4096);
+        if ($chunk !== false && $chunk !== '') $out .= $chunk;
+        if (time() - $last_tick >= 3) {
+            $tick_count++;
+            $dots = str_repeat('·', $tick_count % 4 ?: 4);
+            $secs = $tick_count * 3;
+            echo "<script>var p=document.getElementById('pnpm-progress');if(p)p.textContent='" . $dots . " {$secs}s';</script>\n";
+            @ob_flush(); flush();
+            $last_tick = time();
+        }
+        usleep(200000);
+    }
+    echo "<script>var p=document.getElementById('pnpm-progress');if(p)p.textContent='done';</script>\n";
+    @ob_flush(); flush();
+    fclose($pipes[1]);
+    $code = proc_close($proc);
+    return ['output' => $out, 'code' => $code];
+}
+
+$r = run_cmd_progress("$env_prefix " . escapeshellarg($pnpm) . " install --no-frozen-lockfile", $workspace_root);
 
 if ($r['code'] !== 0) {
     step_log('⚠️', 'Workspace install had issues — trying local install as fallback…', $r['output']);
