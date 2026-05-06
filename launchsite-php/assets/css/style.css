@@ -1136,6 +1136,58 @@ body {
 }
 
 /* ============================================================
+   HOW IT WORKS (index page)
+   ============================================================ */
+.how-section {
+    padding: 72px 0 80px;
+    background: var(--color-bg-2);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+.how-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+    margin-top: 3rem;
+    counter-reset: how-step;
+}
+.how-step {
+    position: relative;
+    padding: 32px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+.how-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-purple), #5b21b6);
+    color: white;
+    font-size: 1rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+.how-step h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-white);
+    margin-bottom: 0.6rem;
+    letter-spacing: -0.01em;
+}
+.how-step p {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.65;
+}
+@media (max-width: 768px) {
+    .how-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
    EMPTY STATE
    ============================================================ */
 .empty-state {
