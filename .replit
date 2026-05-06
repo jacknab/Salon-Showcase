@@ -33,7 +33,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "php -S 0.0.0.0:5000 -t /home/runner/workspace/launchsite-php /home/runner/workspace/launchsite-php/router.php"
+args = "php -S 0.0.0.0:5000 -t /home/runner/workspace/launchsite-php /home/runner/workspace/launchsite-php/router.php & php -S 0.0.0.0:8008 -t /home/runner/workspace/launchsite-php /home/runner/workspace/launchsite-php/router.php"
 waitForPort = 5000
 
 [[workflows.workflow]]
@@ -58,11 +58,7 @@ timeoutMs = 20000
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 8008
-externalPort = 8008
+externalPort = 80
 
 [[ports]]
 localPort = 8080

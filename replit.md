@@ -4,7 +4,7 @@ A PHP-based website design catalog for Certxa's **Launchit** product — salon o
 
 ## Run & Operate
 
-- `php -S 0.0.0.0:8008 -t /home/runner/workspace/launchsite-php /home/runner/workspace/launchsite-php/router.php` — PHP catalog server (workflow: "LaunchSite PHP Catalog")
+- PHP catalog runs on **both port 5000 (webview preview) and port 8008 (canvas iframe)** — both launched in parallel by the "LaunchSite PHP Catalog" workflow
 - `pnpm --filter @workspace/api-server run dev` — Express API server (port 8080)
 - To add a new React template: (1) extract zip to `artifacts/template-{id}/`, (2) install (`pnpm install`), (3) set `base` + `outDir` in `vite.config.ts`, (4) build (`pnpm run build`), (5) register in `data/templates.php` with `type: 'react'` + `react_path`, (6) add card to category page, (7) regenerate thumbnail.
 - Required env: `DATABASE_URL` — Postgres connection string (API server only)
