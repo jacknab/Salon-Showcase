@@ -22,6 +22,24 @@ $back_url = BASE_PATH . '/' . ($category_map[$t['category']] ?? '');
 
 $is_react = !empty($t['type']) && $t['type'] === 'react';
 
+// Badge variant per category
+$badge_class = match($t['category']) {
+    'Barbershop' => 'hb--barber',
+    'Nail Salon' => 'hb--nail',
+    default      => 'hb--hair',
+};
+
+// Demo hours used in the preview (typical UK salon schedule)
+$demo_hours = [
+    'sun' => ['open' => '10:00', 'close' => '16:00', 'closed' => true],
+    'mon' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
+    'tue' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
+    'wed' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
+    'thu' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
+    'fri' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
+    'sat' => ['open' => '10:00', 'close' => '16:00', 'closed' => false],
+];
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -107,6 +125,12 @@ function setDevice(mode) {
     <!-- HERO -->
     <section class="psite-hero">
         <div class="psite-hero__content">
+            <?php if ($t['category'] !== 'Barbershop'): ?>
+            <div class="hb <?php echo $badge_class; ?>" id="hoursBadge" aria-live="polite" aria-label="Business hours status">
+                <span class="hb-dot"></span>
+                <span class="hb-text">OPEN</span>
+            </div>
+            <?php endif; ?>
             <div class="psite-hero__eyebrow"><?php echo htmlspecialchars($t['category']); ?> · <?php echo htmlspecialchars($t['style']); ?></div>
             <h1 class="psite-hero__h1"><?php echo htmlspecialchars($t['hero_tagline']); ?></h1>
             <p class="psite-hero__sub"><?php echo htmlspecialchars($t['hero_sub']); ?></p>
@@ -122,6 +146,12 @@ function setDevice(mode) {
                 echo $icon;
                 ?>
             </div>
+            <?php if ($t['category'] === 'Barbershop'): ?>
+            <div class="hb <?php echo $badge_class; ?>" id="hoursBadge" aria-live="polite" aria-label="Business hours status">
+                <span class="hb-dot"></span>
+                <span class="hb-text">OPEN</span>
+            </div>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -261,6 +291,11 @@ function setDevice(mode) {
 
 </div><!-- /preview-site -->
 </div><!-- /preview-wrapper -->
+
+<script src="<?php echo BASE_PATH; ?>/assets/js/hours-badge.js"></script>
+<script>
+initHoursBadge('hoursBadge', <?php echo json_encode($demo_hours); ?>);
+</script>
 
 <script>
 function setDevice(mode) {
