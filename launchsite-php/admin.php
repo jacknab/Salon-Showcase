@@ -174,6 +174,11 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                                 <input type="hidden" name="template_id" value="<?php echo htmlspecialchars($id); ?>">
                                 <button type="submit" class="tbl-link tbl-link--regen">Regen Thumb</button>
                             </form>
+                            <button class="tbl-link tbl-link--upload btn-upload-thumb"
+                                    data-id="<?php echo htmlspecialchars($id); ?>"
+                                    data-name="<?php echo htmlspecialchars($t['name']); ?>">
+                                Upload Image
+                            </button>
                             <button class="tbl-link tbl-link--delete btn-delete"
                                     data-id="<?php echo htmlspecialchars($id); ?>"
                                     data-name="<?php echo htmlspecialchars($t['name']); ?>"
@@ -236,6 +241,47 @@ $thumbs_dir  = __DIR__ . '/assets/img/thumbs';
                             🗑️ Delete Permanently
                         </button>
                         <button type="button" class="btn-admin btn-admin--ghost" onclick="closeDeleteModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Thumbnail Modal -->
+    <div id="uploadThumbModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">Upload Catalog Image</div>
+                <button class="modal-close" onclick="closeUploadThumbModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-template-info" id="uploadThumbTemplateName"></div>
+                <p class="modal-desc">
+                    Upload any JPG, PNG, or WebP image. It will be automatically resized and cropped to
+                    900×620 px and saved as the catalog card image for this template.
+                </p>
+                <form id="uploadThumbForm" method="POST"
+                      action="<?php echo BASE_PATH; ?>/admin-upload-thumb.php"
+                      enctype="multipart/form-data" onsubmit="return confirmUploadThumb()">
+                    <input type="hidden" name="template_id" id="uploadThumbTemplateId">
+                    <div class="upload-drop upload-drop--compact" id="uploadThumbDropZone"
+                         onclick="document.getElementById('uploadThumbFile').click()">
+                        <div class="upload-drop__icon" style="font-size:1.8rem;margin-bottom:6px;">🖼️</div>
+                        <div class="upload-drop__title" id="uploadThumbDropTitle">Drop image here, or click to browse</div>
+                        <div class="upload-drop__sub">JPG · PNG · WebP · up to 20 MB</div>
+                        <div id="uploadThumbPreviewWrap" style="display:none;margin-top:12px;">
+                            <img id="uploadThumbPreview"
+                                 style="max-width:100%;max-height:160px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);object-fit:cover;">
+                        </div>
+                        <input type="file" name="thumbimage" id="uploadThumbFile"
+                               accept="image/jpeg,image/png,image/webp" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-admin btn-admin--primary" id="uploadThumbBtn">
+                            💾 Save as Catalog Image
+                        </button>
+                        <button type="button" class="btn-admin btn-admin--ghost"
+                                onclick="closeUploadThumbModal()">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -472,11 +518,74 @@ function confirmReplace() {
     return true;
 }
 
+// ── Upload thumbnail modal ────────────────────────────────────────────────────
+document.querySelectorAll('.btn-upload-thumb').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id   = btn.dataset.id;
+        const name = btn.dataset.name;
+        document.getElementById('uploadThumbTemplateId').value       = id;
+        document.getElementById('uploadThumbTemplateName').textContent = name + '  (' + id + ')';
+        document.getElementById('uploadThumbDropTitle').textContent   = 'Drop image here, or click to browse';
+        document.getElementById('uploadThumbPreviewWrap').style.display = 'none';
+        document.getElementById('uploadThumbFile').value  = '';
+        document.getElementById('uploadThumbBtn').innerHTML = '💾 Save as Catalog Image';
+        document.getElementById('uploadThumbBtn').disabled  = false;
+        document.getElementById('uploadThumbModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    });
+});
+
+document.getElementById('uploadThumbFile').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    document.getElementById('uploadThumbDropTitle').textContent = '🖼️ ' + file.name;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('uploadThumbPreview').src = e.target.result;
+        document.getElementById('uploadThumbPreviewWrap').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+});
+
+const uploadThumbDropZone = document.getElementById('uploadThumbDropZone');
+uploadThumbDropZone.addEventListener('dragover', e => { e.preventDefault(); uploadThumbDropZone.classList.add('drag-over'); });
+uploadThumbDropZone.addEventListener('dragleave', () => uploadThumbDropZone.classList.remove('drag-over'));
+uploadThumbDropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadThumbDropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('uploadThumbFile').files = dt.files;
+        document.getElementById('uploadThumbFile').dispatchEvent(new Event('change'));
+    }
+});
+
+function closeUploadThumbModal() {
+    document.getElementById('uploadThumbModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.getElementById('uploadThumbModal').addEventListener('click', function(e) {
+    if (e.target === this) closeUploadThumbModal();
+});
+function confirmUploadThumb() {
+    if (!document.getElementById('uploadThumbFile').files[0]) {
+        alert('Please select an image first.');
+        return false;
+    }
+    const btn = document.getElementById('uploadThumbBtn');
+    btn.innerHTML = '<span class="spinner"></span> Saving…';
+    btn.disabled  = true;
+    return true;
+}
+
 // Close modals on Escape key
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         closeReplaceModal();
         closeDeleteModal();
+        closeUploadThumbModal();
     }
 });
 </script>
