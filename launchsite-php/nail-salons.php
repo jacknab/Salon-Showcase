@@ -75,6 +75,19 @@ $templates = [
         'light'    => '#0f1818',
         'url_slug' => 'zen-nails',
     ],
+    [
+        'id'       => 'luxury-nails-spa',
+        'name'     => 'Luxury Nails Spa',
+        'style'    => 'Luxury Spa',
+        'desc'     => 'Premium nail spa template with cinematic hero slideshow, tabbed service menus (nails, pedicure, waxing), gallery grid, and an elegant rose-gold palette.',
+        'badge'    => 'new',
+        'features' => ['Manicure', 'Pedicure', 'Waxing'],
+        'accent'   => '#f43f5e',
+        'dark'     => '#111827',
+        'light'    => '#1f2937',
+        'url_slug' => 'luxury-nails-spa',
+        'type'     => 'react',
+    ],
 ];
 
 require_once __DIR__ . '/includes/header.php';

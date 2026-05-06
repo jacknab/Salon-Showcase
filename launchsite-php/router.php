@@ -20,6 +20,16 @@ $_SERVER['SCRIPT_NAME'] = $uri;
 
 $file = __DIR__ . $uri;
 
+// Serve directory index.html (for built React SPAs under /templates/)
+if (is_dir($file)) {
+    $index = rtrim($file, '/') . '/index.html';
+    if (is_file($index)) {
+        header('Content-Type: text/html; charset=utf-8');
+        readfile($index);
+        exit;
+    }
+}
+
 // Serve static files manually (css, js, images, fonts, etc.)
 if (is_file($file) && pathinfo($file, PATHINFO_EXTENSION) !== 'php') {
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));

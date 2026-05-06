@@ -20,6 +20,8 @@ $category_map = [
 ];
 $back_url = BASE_PATH . '/' . ($category_map[$t['category']] ?? '');
 
+$is_react = !empty($t['type']) && $t['type'] === 'react';
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -50,6 +52,41 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </div>
 
+<?php if ($is_react): ?>
+<!-- ── React template: iframe preview ── -->
+<div class="preview-wrapper preview-wrapper--react">
+    <iframe
+        id="previewSite"
+        src="<?php echo htmlspecialchars($t['react_path']); ?>"
+        class="preview-iframe"
+        allowfullscreen
+        loading="lazy"
+    ></iframe>
+</div>
+
+<script>
+function setDevice(mode) {
+    var iframe = document.getElementById('previewSite');
+    var btnD = document.getElementById('btnDesktop');
+    var btnM = document.getElementById('btnMobile');
+    if (mode === 'mobile') {
+        iframe.style.width = '390px';
+        iframe.style.marginLeft = 'auto';
+        iframe.style.marginRight = 'auto';
+        iframe.style.display = 'block';
+        iframe.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.1), 0 24px 64px rgba(0,0,0,0.6)';
+        btnM.classList.add('is-active');
+        btnD.classList.remove('is-active');
+    } else {
+        iframe.style.width = '100%';
+        iframe.style.boxShadow = 'none';
+        btnD.classList.add('is-active');
+        btnM.classList.remove('is-active');
+    }
+}
+</script>
+
+<?php else: ?>
 <!-- ── Scrollable preview ── -->
 <div class="preview-wrapper">
 <div class="preview-site" id="previewSite" style="--accent:<?php echo htmlspecialchars($t['accent']); ?>;--dark:<?php echo htmlspecialchars($t['dark']); ?>;--light:<?php echo htmlspecialchars($t['light']); ?>;">
@@ -241,5 +278,7 @@ function setDevice(mode) {
     }
 }
 </script>
+
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

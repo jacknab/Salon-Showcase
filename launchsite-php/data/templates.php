@@ -298,4 +298,24 @@ $all_templates = [
         'hero_sub'     => 'Minimal design, maximum precision. For nails that speak for themselves.',
         'business_name'=> 'Zen Nails',
     ],
+
+    /* ── REACT TEMPLATES ── */
+    'luxury-nails-spa' => [
+        'id'       => 'luxury-nails-spa',
+        'name'     => 'Luxury Nails Spa',
+        'category' => 'Nail Salon',
+        'style'    => 'Luxury Spa',
+        'desc'     => 'Premium nail spa template with cinematic hero slideshow, tabbed service menus, gallery grid, and an elegant rose-gold colour palette. Full contact section with map embed.',
+        'badge'    => 'new',
+        'features' => ['Manicure', 'Pedicure', 'Waxing'],
+        'accent'   => '#f43f5e',
+        'dark'     => '#111827',
+        'light'    => '#1f2937',
+        'url_slug' => 'luxury-nails-spa',
+        'hero_tagline' => 'Where beauty meets relaxation.',
+        'hero_sub'     => 'Experience premium nail care and spa services in an elegant, serene environment.',
+        'business_name'=> 'Luxury Nails Spa',
+        'type'     => 'react',
+        'react_path' => '/launchsite/templates/luxury-nails-spa/',
+    ],
 ];
